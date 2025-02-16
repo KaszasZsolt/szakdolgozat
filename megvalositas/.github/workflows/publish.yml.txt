@@ -1,0 +1,83 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy_client:
+    environment: DEPLOY_KEY_KARTYAJATEK  # Itt állítjuk be az environmentet!
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 📌 1️⃣ Kliensek telepítése és buildelése
+      - name: Install client dependencies
+        run: cd client && npm install
+
+      - name: Build the client project
+        run: cd client && npm run build
+
+      # 📌 2️⃣ SSH kulcs beállítása
+      - name: Set up SSH for client deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY_KARTYAJATEK }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      # 📌 3️⃣ Csak a client/dist mappát másolja fel a VPS-re
+      - name: Deploy client dist to VPS
+        run: |
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
+            ./client/dist/ \
+            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/dist/
+
+      # 📌 4️⃣ Az alkalmazás indítása PM2-vel (kliensek)
+      - name: Restart client application with PM2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@217.182.76.202 << 'EOF'
+            cd /home/ubuntu/kartyajatek
+            pm2 delete kartyajatek || true
+            pm2 start npx --name "kartyajatek" -- serve -s dist -l 3000
+            pm2 save
+          EOF
+
+  deploy_server:
+    environment: DEPLOY_KEY_KARTYAJATEK 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 📌 1️⃣ Szerver függőségek telepítése
+      - name: Install server dependencies
+        run: cd server && npm install
+
+      # 📌 2️⃣ SSH kulcs beállítása
+      - name: Set up SSH for server deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY_KARTYAJATEK }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      # 📌 3️⃣ A server mappa feltöltése a VPS-re
+      - name: Deploy server to VPS
+        run: |
+          rsync -avz --delete --exclude='ssl' \
+            -e "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/id_rsa" \
+            ./server/ \
+            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/server
+
+
+      # 📌 4️⃣ A szerver alkalmazás indítása/újraindítása PM2-vel
+      - name: Restart server with PM2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@217.182.76.202 << 'EOF'
+            cd /home/ubuntu/kartyajatek/server
+            pm2 delete my_server || true
+            pm2 start npm --name "my_server" -- start
+            pm2 save
+          EOF

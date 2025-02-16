@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: "BrushScript";
+    src: url("./assets/fonts/BrushScriptStd.otf");
+}
+:root {
+  /* Alap szín: sötétkék, enyhén áttetsző */
+  --base-color: rgba(6, 20, 27, 0.76);
+
+  /* Világos mód */
+  --outline-color: var(--base-color);                    /* Finom kontúr */
+  --primary-color: var(--base-color);        
+  --primary-color-text:    #000000;                   /* Fő szín: kontrasztos, jól olvasható */
+  --primary-color-hover: rgba(6, 20, 27, 1);              /* Hover állapot: telítettebb */
+  --primary-background-color: #f0f2f5;         
+  --secondory-background-color:#d0d7e6;             /* A fő, sötét alapszín háttérként */
+  --secondary-color: #000000;                            /* Tiszta fehér elemekhez */
+  --primary-color-active: rgba(6, 20, 27, 0.9);           /* Aktív állapot, egy kicsit sötétebb */
+  --background-color-w-opacity: rgba(0, 0, 0, 0);         /* Átlátszó segédváltozó */
+  --button-background-color: #0d1f2f;                     /* Gombok sötét, elegáns háttere */
+  --colorFadeIn: var(--base-color);                      /* Fade in effektus színe */
+}
+
+/* Dark mode – a sötét háttérbe építve, világosabb elemekkel */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --outline-color: #8aa9c3;                           /* Világos, de még harmonikus */
+    --primary-color: #050505e8;
+    --primary-color-text:    #ffffff;                   /* Fő szín: kontrasztos, jól olvasható */
+    --primary-color-hover: #a3c1e0;                     /* Hover: egy kicsit világosabb árnyalat */
+    --primary-background-color: #06141B;  
+    --secondory-background-color:#111827;             /* A fő, sötét alapszín háttérként */
+    --secondary-color: #4a72a0;                         /* Másodlagos szín: sötétebb árnyalat */
+    --primary-color-active: #7599b8;                    /* Aktív állapot: köztes fényerő */
+    --background-color-w-opacity: rgba(0, 0, 0, 0);
+    --button-background-color: #0d1f2f;                 /* Gombok: egységes sötétkék háttér */
+    --colorFadeIn: #8aa9c3;
+  }
+}
+html, body {
+  height: 100%;
+}
+
+#root, .app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+}
+html {
+  overflow-x: hidden
+}
+
+body {
+  overflow-x: hidden;
+}
+
+@media only screen and (min-width: 640px) {
+  body {
+    overflow-x: visible;
+  }
+}
+
+.nav-text {
+    color: var(--primary-color-hover);
+}
+.nav-text:hover {
+    color: var(--primary-color);
+}
+.nav-text:active {
+    color: var(--primary-color-active);
+}
+.text-primary {
+  color: var(--primary-color-text);
+}
+.text-secondary {
+  color: var(--secondary-color);
+}
+.text-header {
+  color: var(--primary-color-text);
+}
+.text-dim {
+  color: var(--primary-background-color);
+}
+
+.text-hover-bg {
+  color: var(--outline-color)
+}
+
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: var(--primary-background-color)
+}
+.bg-color-motto{
+  color: var(--primary-background-color)
+}
+
+.background-primary {
+  background-color: var(--primary-color);
+}
+.background-secondary {
+  background-color: var(--secondory-background-color);
+}
+
+.button-primary {
+  color: var(--primary-background-color);
+  background-color: var(--primary-color);
+  outline-style: solid;
+  outline-color: var(--primary-color);
+  font-size: 1rem;
+  font-weight: 600;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  transition-duration: 150ms;
+}
+.button-primary:hover {
+  background-color: var(--background-color-w-opacity);
+  color: var(--primary-color-hover);
+}
+
+.button-bg{
+  background-color: var(--button-background-color);
+}
+.button-dim {
+  color: var(--primary-background-color);
+  background-color: var(--background-color-w-opacity);
+  outline-style: solid;
+  outline-color: var(--primary-background-color);
+  font-size: 1rem;
+  font-weight: 600;
+  width: 100%;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin-top: 1rem;
+  transition-duration: 150ms;
+}
+.button-dim:hover {
+  background-color: var(--primary-background-color);
+  color: var(--primary-color-hover);
+}
+.colorFadeIn{
+  color: var(--colorFadeIn);
+}

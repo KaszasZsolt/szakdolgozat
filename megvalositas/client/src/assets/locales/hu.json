@@ -1,0 +1,15 @@
+{
+  "footer": {
+    "company": "Kártyajáték",
+    "copy": "© 2025 Kártyajáték Minden jog fenntartva."
+  },
+  "navbar": {
+    "company": "Kártyajáték",
+    "home": "Főoldal"
+  },
+  "notFound": {
+    "title": "HIBA 404",
+    "message": "Sajnáljuk, de a keresett oldal nem található.",
+    "button": "Vissza a főoldalra"
+  }
+}

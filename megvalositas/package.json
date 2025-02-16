@@ -1,0 +1,24 @@
+{
+  "name": "nail-website-main",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"npm run dev --prefix client\" \"npm run start --prefix server\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KaszasZsolt/kincso_nails.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KaszasZsolt/kincso_nails/issues"
+  },
+  "homepage": "https://github.com/KaszasZsolt/kincso_nails#readme",
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
