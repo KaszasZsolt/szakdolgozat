@@ -80,7 +80,7 @@ const Home = () => {
   return (
     <div className="bg-white lg:px-[22vw] md:px-20 px-8 pt-[12vh] pb-[4vh]">
       {/* Fő cím */}
-      <h1 className="text-3xl font-bold text-primary text-center">
+      <h1 className="text-3xl font-bold text-primary text-center text-white">
         {t("news.title", "Fejlesztési Időbeosztás")}
       </h1>
 
@@ -103,14 +103,14 @@ const Home = () => {
           <tbody>
             {milestones.map((milestone) => (
               <tr key={milestone.id} className="border border-gray-300">
-                <td className="border border-gray-300 px-4 py-2 text-center">
+                <td className="border border-gray-300 px-4 py-2 text-center text-white">
                   {milestone.id}.
                 </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
+                <td className="border border-gray-300 px-4 py-2 text-center text-white">
                   {milestone.period}
                 </td>
                 <td
-                  className="border border-gray-300 px-4 py-2"
+                  className="border border-gray-300 px-4 py-2 text-white"
                   dangerouslySetInnerHTML={{ __html: milestone.tasks }}
                 />
               </tr>

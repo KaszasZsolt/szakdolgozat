@@ -140,8 +140,9 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="bg-white lg:px-[22vw] md:px-20 px-8 pt-[12vh] pb-[4vh]">
-      <h1 className="text-3xl font-bold text-primary text-center mb-6">
+    // A háttérszínt sötétebbre állítottam, hogy a fehér szöveg jól olvasható legyen.
+    <div className=" lg:px-[22vw] md:px-20 px-8 pt-[12vh] pb-[4vh] text-white">
+      <h1 className="text-3xl font-bold text-center mb-6">
         Dashboard
       </h1>
 
@@ -161,7 +162,7 @@ const Dashboard = () => {
                 placeholder="Add meg a játék nevét"
                 value={newGameName}
                 onChange={(e) => setNewGameName(e.target.value)}
-                className="border border-gray-400 rounded px-3 py-2 w-full max-w-xs"
+                className="border border-gray-400 rounded px-3 py-2 w-full max-w-xs bg-gray-800 text-white"
               />
               <button
                 onClick={handleCreateGame}
