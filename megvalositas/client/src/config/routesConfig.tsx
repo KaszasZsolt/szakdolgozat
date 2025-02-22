@@ -4,5 +4,6 @@ export const routesConfig = {
       home: "/home",
       register: "/register",
       login: "/login",
+      dashboard: "/dashboard",
     }
   };
