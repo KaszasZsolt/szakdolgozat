@@ -1,3 +1,31 @@
+
+---
+
+## Képek és Előnézetek
+
+### Kezdőoldal
+![Home](home.png)
+
+### Regisztráció
+![Register](register.png)
+
+### Bejelentkezés
+![Login](login.png)
+
+### Dashboard
+![Dashboard](dashboard.png)
+![Dashboard](dasboard_bemutato.png)
+
+### Game Creation Page
+![Game Creation Page](gamecreationpage.png)
+![Game Creation Page](gamecreationpage1.png)
+
+### Adatbázis Példa
+![Adatbázis Példa](database_example.png)
+
+
+---
+
 ## Backend Funkcionalitások
 
 ### Felhasználó Kezelés
@@ -14,7 +42,7 @@
 ### Token Alapú Hitelesítés
 - **authenticateToken Middleware**
   - Ellenőrzi a JWT token érvényességét minden védett végpontnál.
-  - Tokenből kinyert adatok (id, email) hozzáférhetővé válnak a további kérések során.
+  - A tokenből kinyert adatok (id, email) hozzáférhetővé válnak a további kérések során.
 
 ### Játékok Kezelése
 - **Játékok Listázása (/games GET)**
@@ -29,6 +57,8 @@
 
 - **Játék Törlése**
   - **DELETE /games/:gameId:** Törli a megadott id-jű játékot, ha az a bejelentkezett felhasználóhoz tartozik.
+
+---
 
 ## Frontend Funkcionalitások
 
@@ -54,8 +84,8 @@
   - A konfiguráció előnézetét és a hozzá generált Mermaid diagramot (vizuális állapotdiagram) összecsukható szekciókban jeleníti meg.
 
 - **Konfiguráció Mentése:**
-  - **Lokális Előnézet:** A "Konfiguráció előnézet" gomb validálja a JSON-t, és generálja a Mermaid diagram kódot.
-  - **Adatbázisba Mentés:** A "Mentés az adatbázisba" gomb POST/PUT kérést küld a backendnek:
+  - **Lokális Előnézet:** A „Konfiguráció előnézet” gomb validálja a JSON-t, és generálja a Mermaid diagram kódot.
+  - **Adatbázisba Mentés:** A „Mentés az adatbázisba” gomb POST/PUT kérést küld a backendnek:
     - Ha a játék egyedi azonosítója (`gameId`) átadásra került, akkor PUT kéréssel frissíti a meglévő játék konfigurációját.
     - Ha nincs `gameId`, akkor új játék konfiguráció mentésére POST kérést küld.
   
