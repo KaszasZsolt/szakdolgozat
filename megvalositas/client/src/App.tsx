@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { routesConfig } from "./config/routesConfig";
 import Dashboard from "./pages/Dashboard";
+import GameCreationPage from "./pages/GameCreationPage";
 
 function App() {
   const currentRoutes =routesConfig.hu;
@@ -16,6 +17,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/gamecreationpage" element={<GameCreationPage />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

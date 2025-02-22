@@ -44,10 +44,15 @@ const Navbar: React.FC = () => {
       <ul className="hidden sm:flex flex-1 justify-end items-center space-x-6">
         {isLoggedIn ? (
           <>
-            {/* Ha be van jelentkezve, akkor a dashboard (főoldal) és a kijelentkezés linkje jelenjen meg */}
+            {/* Bejelentkezett felhasználóknak: dashboard (Főoldal), Játék készítés, majd kijelentkezés */}
             <Link to={currentRoutes.dashboard}>
               <li className="text-base text-primary font-medium cursor-pointer hover:text-gray-600">
                 {t("navbar.dashboard", "Főoldal")}
+              </li>
+            </Link>
+            <Link to={currentRoutes.gameCreation}>
+              <li className="text-base text-primary font-medium cursor-pointer hover:text-gray-600">
+                {t("navbar.game_creation", "Játék készítés")}
               </li>
             </Link>
             <li 
@@ -79,6 +84,11 @@ const Navbar: React.FC = () => {
                 <Link to={currentRoutes.dashboard} onClick={() => setIsOpen(false)}>
                   <li className="px-4 py-3 border-b hover:bg-gray-100">
                     {t("navbar.dashboard", "Főoldal")}
+                  </li>
+                </Link>
+                <Link to={currentRoutes.gameCreation} onClick={() => setIsOpen(false)}>
+                  <li className="px-4 py-3 border-b hover:bg-gray-100">
+                    {t("navbar.game_creation", "Játék készítés")}
                   </li>
                 </Link>
                 <li 
