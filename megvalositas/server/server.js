@@ -4,13 +4,20 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3011;
 const SECRET_KEY = process.env.JWT_SECRET;
+const REFRESH_SECRET = process.env.REFRESH_SECRET;
 
-app.use(cors());
+const corsOptions = {
+  origin: "http://localhost:5173", // A kliens oldali origin
+  credentials: true, // Engedélyezi a cookie-k küldését
+};
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
 // MySQL kapcsolat pool létrehozása a .env fájlban megadott adatokkal
 const pool = mysql.createPool({
@@ -91,8 +98,18 @@ app.post('/login', async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Érvénytelen email vagy jelszó." });
     }
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: '1h' });
-    return res.json({ message: "Sikeres bejelentkezés.", token });
+    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, { expiresIn: '7d' });
+    
+    // A refresh token-t HTTPOnly cookie-ként küldjük vissza
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS esetén igaz
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 nap
+    });
+    
+    return res.json({ message: "Sikeres bejelentkezés.", accessToken });
   } catch (error) {
     console.error("Bejelentkezési hiba:", error);
     res.status(500).json({ message: "Valami hiba történt a bejelentkezés során." });
@@ -115,11 +132,32 @@ function authenticateToken(req, res, next) {
   });
 }
 
+app.post('/refresh', (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json({ message: "Refresh token hiányzik." });
+  jwt.verify(refreshToken, REFRESH_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: "Refresh token érvénytelen vagy lejárt." });
+    const newAccessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: '15m' });
+    res.json({ accessToken: newAccessToken });
+  });
+});
+
+// Logout endpoint: törli a refresh token cookie-t
+app.post('/logout', (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  res.json({ message: "Sikeres kijelentkezés." });
+});
+
 // Védett Dashboard végpont
 app.get('/dashboard', authenticateToken, async (req, res) => {
   res.json({ email: req.user.email, id: req.user.id });
 });
 
+// Játék létrehozása (csak a neve)
 app.post('/games', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -134,6 +172,7 @@ app.post('/games', authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Hiba történt a játék létrehozása során." });
   }
 });
+
 // Játékok lekérése – csak a bejelentkezett felhasználó játékai
 app.get('/games', authenticateToken, async (req, res) => {
   try {
@@ -163,8 +202,7 @@ app.post('/games/config', authenticateToken, async (req, res) => {
   }
 });
 
-
-// Játék konfiguráció frissítése (PUT /games/:gameId/config)
+// Játék konfiguráció frissítése
 app.put('/games/:gameId/config', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -185,7 +223,7 @@ app.put('/games/:gameId/config', authenticateToken, async (req, res) => {
   }
 });
 
-// Játék törlése (DELETE /games/:gameId)
+// Játék törlése
 app.delete('/games/:gameId', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;

@@ -42,6 +42,7 @@ const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ email: formData.email, password: formData.password }),
       });
 
@@ -52,8 +53,8 @@ const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
       }
 
       // Ha bejelentkezésről van szó, tároljuk a token-t és navigáljunk tovább
-      if (isLogin && data.token) {
-        localStorage.setItem("token", data.token);
+      if (isLogin && data.accessToken) {
+        localStorage.setItem("token", data.accessToken);
         navigate("/dashboard"); // Vagy a kívánt útvonal
       } else {
         // Regisztráció esetén értesítjük a felhasználót, és átirányíthatjuk a bejelentkezés oldalára
