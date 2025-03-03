@@ -25,7 +25,6 @@ const pool = mysql.createPool({
 
 // Táblák inicializálása: 'users' és 'games'
 // A games táblában a config oszlopban JSON stringként tároljuk a konfigurációt.
-// UNIQUE kulcsot eltávolítottuk, így két azonos nevű játék is létrehozható.
 async function initDB() {
   try {
     // Users tábla létrehozása
@@ -121,6 +120,20 @@ app.get('/dashboard', authenticateToken, async (req, res) => {
   res.json({ email: req.user.email, id: req.user.id });
 });
 
+app.post('/games', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "A játék neve kötelező." });
+    }
+    await pool.query('INSERT INTO games (user_id, name) VALUES (?, ?)', [userId, name]);
+    res.status(201).json({ message: "Játék sikeresen létrehozva." });
+  } catch (err) {
+    console.error("Hiba a játék létrehozásakor:", err);
+    res.status(500).json({ message: "Hiba történt a játék létrehozása során." });
+  }
+});
 // Játékok lekérése – csak a bejelentkezett felhasználó játékai
 app.get('/games', authenticateToken, async (req, res) => {
   try {
@@ -133,25 +146,7 @@ app.get('/games', authenticateToken, async (req, res) => {
   }
 });
 
-// Játék létrehozása (csak név alapján) – két azonos nevű játék is létrehozható
-app.post('/games', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { name } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: "A játék neve kötelező." });
-    }
-    // Új játék létrehozása függetlenül attól, hogy létezik-e már ugyanazzal a névvel
-    await pool.query('INSERT INTO games (user_id, name) VALUES (?, ?)', [userId, name]);
-    res.status(201).json({ message: "Játék sikeresen létrehozva." });
-  } catch (err) {
-    console.error("Hiba a játék létrehozásakor:", err);
-    res.status(500).json({ message: "Hiba történt a játék létrehozása során." });
-  }
-});
-
-// Új játék konfiguráció mentése (POST /games/config)
-// Itt egy új játékot hozunk létre a konfigurációval; a név nem kell, hogy egyedi legyen.
+// Játék létrehozása konfigurációval
 app.post('/games/config', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -159,16 +154,17 @@ app.post('/games/config', authenticateToken, async (req, res) => {
     if (!name || !config) {
       return res.status(400).json({ message: "A játék neve és konfiguráció kötelező." });
     }
-    await pool.query('INSERT INTO games (user_id, name, config) VALUES (?, ?, ?)', [userId, name, config]);
-    res.status(201).json({ message: "Játék konfiguráció sikeresen elmentve." });
+    const [result] = await pool.query('INSERT INTO games (user_id, name, config) VALUES (?, ?, ?)', [userId, name, config]);
+    console.log(result.insertId);
+    res.status(201).json({ message: "Játék konfiguráció sikeresen elmentve.", id: result.insertId });
   } catch (err) {
     console.error("Hiba a játék konfiguráció mentésekor:", err);
     res.status(500).json({ message: "Hiba történt a játék konfiguráció mentése során." });
   }
 });
 
+
 // Játék konfiguráció frissítése (PUT /games/:gameId/config)
-// A frissítés során a játékot az auto-increment id alapján azonosítjuk.
 app.put('/games/:gameId/config', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;

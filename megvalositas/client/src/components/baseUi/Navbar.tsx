@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { navLinks } from "../constants";
+import { navLinks } from "../../constants";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { routesConfig } from "../config/routesConfig";
+import { routesConfig } from "../../config/routesConfig";
 
 const Navbar: React.FC = () => {
   const { t, i18n } = useTranslation();

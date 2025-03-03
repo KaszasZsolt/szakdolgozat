@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { NotFound, Home, Register, Login } from "./pages";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "./components/baseUi/Navbar";
+import Footer from "./components/baseUi/Footer";
 import { routesConfig } from "./config/routesConfig";
 import Dashboard from "./pages/Dashboard";
 import GameCreationPage from "./pages/GameCreationPage";
@@ -27,3 +27,4 @@ function App() {
 }
 
 export default App;
+ 
