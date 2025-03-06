@@ -3,7 +3,8 @@ import EditorSection from "./EditorSection";
 import PreviewSection from "./PreviewSection";
 import MermaidCodeSection from "./MermaidCodeSection";
 import DiagramSection from "./DiagramSection";
-
+import { GameConfig } from "../../utils/GameEngine";
+import CustomJsonEditor from "../custom/CustomJsonEditor";
 interface BaseGameplaySectionProps {
   config: string;
   setConfig: (value: string) => void;
@@ -34,7 +35,7 @@ const BaseGameplaySection: React.FC<BaseGameplaySectionProps> = ({
   toggleDiagram,
 }) => {
   return (
-    <section className="mb-8 border p-4 rounded border-gray-700">
+    <section className="mb-8 border p-4 rounded border-gray-700 flex flex-col h-full">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Alap Játékmenet</h2>
         <button
@@ -67,6 +68,18 @@ const BaseGameplaySection: React.FC<BaseGameplaySectionProps> = ({
             isOpen={isDiagramOpen}
             toggleOpen={toggleDiagram}
           />
+
+          {isDiagramOpen && (
+            <div className="mt-4 flex-grow overflow-auto">
+              <CustomJsonEditor
+                config={JSON.parse(config)}
+                onConfigChange={(newConfig: GameConfig) =>
+                  setConfig(JSON.stringify(newConfig, null, 2))
+                }
+              />
+            </div>
+          )}
+
         </>
       )}
     </section>

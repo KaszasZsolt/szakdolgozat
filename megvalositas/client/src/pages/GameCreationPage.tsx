@@ -4,7 +4,7 @@ import mermaid from "mermaid";
 import BaseGameplaySection from "../components/game/BaseGameplaySection";
 import GameplayFunctionsSection from "../components/game/GameplayFunctionsSection";
 import GameSaveSection from "../components/game/GameSaveSection";
-import EngineTestSection from "../components/game/EngineTestSection";  // importáljuk az új komponenst
+import EngineTestSection from "../components/game/EngineTestSection";
 import { useGameConfig } from "../hooks/useGameConfig";
 import { GameEngine, GameConfig } from "../utils/GameEngine";
 
@@ -81,7 +81,9 @@ const GameCreationPage: React.FC = () => {
     defaultConfigString = JSON.stringify(defaultConfigObj, null, 2);
   }
 
-  const { config, setConfig, previewConfig, mermaidCode, error } = useGameConfig(defaultConfigString);
+  const { config, setConfig, previewConfig, mermaidCode, error } = useGameConfig(
+    defaultConfigString
+  );
 
   // UI-szekciók nyitottsága
   const [isEditorOpen, setEditorOpen] = useState(true);
@@ -116,6 +118,7 @@ const GameCreationPage: React.FC = () => {
         <h1 className="text-4xl font-bold text-center">Kártyajáték készítő</h1>
       </header>
 
+      {/* Alap konfiguráció szerkesztése, szöveges és diagramos felületen */}
       <BaseGameplaySection
         config={config}
         setConfig={setConfig}
