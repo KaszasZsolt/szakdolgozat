@@ -1,4 +1,5 @@
 import React from "react";
+import { useState,useEffect } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -25,20 +26,99 @@ interface CustomJsonEditorProps {
 }
 
 const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigChange, hideActionNames = false }) => {
+  const [editedNames, setEditedNames] = useState<{ [key: string]: string }>(
+    () => Object.keys(config.states).reduce((acc, key) => ({ ...acc, [key]: key }), {})
+  );
+
+  useEffect(() => {
+    setEditedNames(() =>
+      Object.keys(config.states).reduce((acc, key) => {
+        acc[key] = key;
+        return acc;
+      }, {} as { [key: string]: string })
+    );
+  }, [config.states]); 
+  
   const handleAddState = () => {
     const stateName = prompt("Új állapot neve:");
     if (!stateName || config.states[stateName]) return;
-    onConfigChange({
-      ...config,
-      states: { ...config.states, [stateName]: { actions: [], next: null } }
-    });
+
+    const stateKeys = Object.keys(config.states);
+    const lastState = stateKeys.length > 0 ? stateKeys[stateKeys.length - 1] : null;
+
+    const updatedStates = {
+      ...config.states,
+      [stateName]: { actions: [], next: null },
+    };
+
+    if (lastState) {
+      updatedStates[lastState] = {
+        ...updatedStates[lastState],
+        next: stateName,
+      };
+    }
+
+    onConfigChange({ ...config, states: updatedStates });
+
+    setEditedNames((prev) => ({
+      ...prev,
+      [stateName]: stateName,
+    }));
+  };
+
+
+  const handleStateNameChange = (oldName: string, newName: string) => {
+    setEditedNames((prev) => ({ ...prev, [oldName]: newName }));
+  };
+
+  const handleStateNameBlur = (oldName: string, currentName: string) => {
+    if (currentName.trim() === "") {
+      setEditedNames((prev) => ({ ...prev, [oldName]: oldName }));
+      return;
+    }
+
+    if (oldName !== currentName && !config.states[currentName]) {
+      const updatedStates: GameConfig["states"] = Object.keys(config.states).reduce((acc, key) => {
+        const newKey = key === oldName ? currentName : key;
+        acc[newKey] = {
+          ...config.states[key],
+          next: config.states[key].next === oldName ? currentName : config.states[key].next,
+        };
+        return acc;
+      }, {} as GameConfig["states"]);
+
+      onConfigChange({ ...config, states: updatedStates });
+
+      setEditedNames((prev) => {
+        const newState = { ...prev };
+        delete newState[oldName];
+        newState[currentName] = currentName;
+        return newState;
+      });
+    }
   };
 
   const handleDeleteState = (stateName: string) => {
+    const stateKeys = Object.keys(config.states);
+    const stateIndex = stateKeys.indexOf(stateName);
+
+    if (stateIndex === -1) return;
+
     const updatedStates = { ...config.states };
+
+    if (stateIndex > 0) {
+      const prevState = stateKeys[stateIndex - 1];
+      updatedStates[prevState] = {
+        ...updatedStates[prevState],
+        next: updatedStates[stateName].next,
+      };
+    }
+
     delete updatedStates[stateName];
+
     onConfigChange({ ...config, states: updatedStates });
   };
+
 
   const handleAddAction = (stateName: string) => {
     const actionName = prompt("Új akció neve:");
@@ -70,8 +150,15 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
       const newIndex = keys.indexOf(over.id);
       if (oldIndex !== -1 && newIndex !== -1) {
         const reorderedKeys = arrayMove(keys, oldIndex, newIndex);
-        const reorderedStates = Object.fromEntries(reorderedKeys.map(key => [key, config.states[key]]));
-        onConfigChange({ ...config, states: reorderedStates });
+        const updatedStates = reorderedKeys.reduce((acc, key, idx) => {
+          acc[key] = {
+            ...config.states[key],
+            next: idx < reorderedKeys.length - 1 ? reorderedKeys[idx + 1] : null,
+          };
+          return acc;
+        }, {} as { [key: string]: typeof config.states[string] });
+
+        onConfigChange({ ...config, states: updatedStates });
       }
     } else if (type === "action" && stateName) {
       const actions = config.states[stateName].actions;
@@ -99,8 +186,9 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                 <div className="flex justify-between items-center cursor-grab">
                   <input
                     type="text"
-                    value={stateName}
-                    readOnly
+                    value={editedNames[stateName]}
+                    onChange={(e) => handleStateNameChange(stateName, e.target.value)} // Engedjük a szerkesztést
+                    onBlur={(e) => handleStateNameBlur(stateName, e.target.value)} // Fókuszvesztés után frissítünk
                     className="text-xs font-bold bg-transparent text-white border-none w-auto"
                   />
                   <button className="bg-red-500 text-white px-1 py-1 rounded text-xs" onClick={() => handleDeleteState(stateName)}>
@@ -163,10 +251,18 @@ const SortableItem: React.FC<{ id: string; children: React.ReactNode }> = ({ id,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <span {...listeners} style={{ cursor: "grab", marginRight: "0.5rem" }}>
+          ☰
+        </span>
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
+      </div>
     </div>
   );
+
 };
 
 export default CustomJsonEditor;
