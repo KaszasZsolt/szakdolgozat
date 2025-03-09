@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { generateGameClassFromConfig } from "../../utils/generateGameClass";
-
-interface GameConfig {
-  game: string;
-  states: {
-    [key: string]: {
-      actions: { name: string; code: string }[];
-      next: string | null;
-    };
-  };
-}
+import { GameConfig } from "../../utils/GameEngine";
 
 interface GeneratedGameClassSectionProps {
   previewConfig: GameConfig | null;
