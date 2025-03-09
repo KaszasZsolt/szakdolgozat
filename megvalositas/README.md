@@ -1,2 +1,2 @@
-Syndicate rp szerver
-# [syndicaterp.hu](https://syndicaterp.hu/)
+Szakdolgozat megvalósítása
+# [kartyajatek.soon.it](https://kartyajatek.soon.it//)

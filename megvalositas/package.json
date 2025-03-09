@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KaszasZsolt/kincso_nails.git"
+    "url": "git+https://github.com/KaszasZsolt/szakdolgozat.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/KaszasZsolt/kincso_nails/issues"
+    "url": "https://github.com/KaszasZsolt/szakdolgozat/issues"
   },
-  "homepage": "https://github.com/KaszasZsolt/kincso_nails#readme",
+  "homepage": "https://github.com/KaszasZsolt/szakdolgozat#readme",
   "dependencies": {
     "concurrently": "^9.1.2"
   },
