@@ -7,15 +7,18 @@ const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 
 const app = express();
-const PORT = process.env.PORT || 3011;
+const PORT = process.env.PORT || 31112;
 const SECRET_KEY = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
 
-const corsOptions = {
-  origin: "http://localhost:5173", // A kliens oldali origin
-  credentials: true, // Engedélyezi a cookie-k küldését
-};
-app.use(cors(corsOptions));
+app.set('trust proxy', true);
+app.use(cors({
+  origin: process.env.NODE_ENV === 'development'
+    ? "http://localhost:5173"
+    : "https://kartyajatek.soon.it/",
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 

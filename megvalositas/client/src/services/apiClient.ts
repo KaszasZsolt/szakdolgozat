@@ -1,11 +1,12 @@
+import { API_BASE_URL } from "../config/config";
 /**
  * fetchWithAuth - Egy wrapper függvény a fetch API-hoz, amely automatikusan frissíti a JWT tokent, ha azt 401-es hibával jelzi.
  *
- * @param url - A kérés URL-je.
+ * @param route - A kérés útvonala pl. /login.
  * @param options - A fetch API által támogatott konfigurációs opciók.
  * @returns A Response objektum, vagy ha szükséges, újrapróbálva az eredeti kérést a frissített tokennel.
  */
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAuth(route: string, options: RequestInit = {}): Promise<Response> {
     const defaultHeaders = {
       "Content-Type": "application/json",
     };
@@ -20,13 +21,13 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
       headers["Authorization"] = `Bearer ${token}`;
     }
   
-    const response = await fetch(url, {
+    const response = await fetch(`${API_BASE_URL}${route}`, {
       ...options,
       headers,
     });
   
     if (response.status === 401) {
-      const refreshResponse = await fetch("http://localhost:3011/refresh", {
+      const refreshResponse = await fetch(`${API_BASE_URL}/refresh`, {
         method: "POST",
         credentials: "include",
       });
@@ -37,7 +38,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
           localStorage.setItem("token", data.accessToken);
           token = data.accessToken;
           headers["Authorization"] = `Bearer ${token}`;
-          return fetch(url, {
+          return fetch(`${API_BASE_URL}${route}`, {
             ...options,
             headers,
           });

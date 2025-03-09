@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy_client:
-    environment: DEPLOY_KEY_KARTYAJATEK  # Itt állítjuk be az environmentet!
+    environment: DEPLOY_KEY_KARTYAJATEK
     runs-on: ubuntu-latest
 
     steps:
@@ -35,19 +35,20 @@ jobs:
             ./client/dist/ \
             ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/dist/
 
-      # 📌 4️⃣ Az alkalmazás indítása PM2-vel (kliensek)
+      # 📌 4️⃣ Az alkalmazás indítása PM2-vel (kliensek) a 3010-es porton
       - name: Restart client application with PM2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@217.182.76.202 << 'EOF'
             cd /home/ubuntu/kartyajatek
-            pm2 delete kartyajatek || true
-            pm2 start npx --name "kartyajatek" -- serve -s dist -l 3000
+            pm2 delete kartyajatek_client || true
+            pm2 start npx --name "kartyajatek_client" -- serve -s dist -l 3010
             pm2 save
           EOF
 
   deploy_server:
-    environment: DEPLOY_KEY_KARTYAJATEK 
+    environment: DEPLOY_KEY_KARTYAJATEK
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -66,18 +67,17 @@ jobs:
       # 📌 3️⃣ A server mappa feltöltése a VPS-re
       - name: Deploy server to VPS
         run: |
-          rsync -avz --delete --exclude='ssl' \
+          rsync -avz --delete --exclude='ssl' --exclude='.env' \
             -e "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/id_rsa" \
             ./server/ \
-            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/server
-
+            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/server/
 
       # 📌 4️⃣ A szerver alkalmazás indítása/újraindítása PM2-vel
       - name: Restart server with PM2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@217.182.76.202 << 'EOF'
             cd /home/ubuntu/kartyajatek/server
-            pm2 delete my_server || true
-            pm2 start npm --name "my_server" -- start
+            pm2 delete kartyajatek_server || true
+            pm2 start npm --name "kartyajatek_server" -- start
             pm2 save
           EOF

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "./apiClient";
 interface AuthResponse {
     accessToken?: string;
     message: string;
@@ -10,7 +11,7 @@ interface AuthResponse {
    * @returns Az API válasza, mely tartalmazza az accessToken-t, ha sikeres a bejelentkezés.
    */
   export async function login(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`http://localhost:3011/login`, {
+    const response = await fetchWithAuth(`/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -30,7 +31,7 @@ interface AuthResponse {
    * @returns Az API válasza
    */
   export async function register(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`http://localhost:3011/register`, {
+    const response = await fetchWithAuth(`/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

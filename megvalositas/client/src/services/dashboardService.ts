@@ -10,7 +10,7 @@ export interface Game {
  * Lekéri a bejelentkezett felhasználó adatait.
  */
 export async function getUserData(): Promise<{ email: string }> {
-  const res = await fetchWithAuth("http://localhost:3011/dashboard", {
+  const res = await fetchWithAuth("/dashboard", {
     method: "GET",
   });
   if (!res.ok) {
@@ -24,7 +24,7 @@ export async function getUserData(): Promise<{ email: string }> {
  * Lekéri a bejelentkezett felhasználó játékait.
  */
 export async function fetchGames(): Promise<Game[]> {
-  const res = await fetchWithAuth("http://localhost:3011/games", {
+  const res = await fetchWithAuth("/games", {
     method: "GET",
   });
   if (!res.ok) {
@@ -38,7 +38,7 @@ export async function fetchGames(): Promise<Game[]> {
  * Létrehoz egy új játékot a megadott névvel.
  */
 export async function createGame(name: string): Promise<any> {
-  const res = await fetchWithAuth("http://localhost:3011/games", {
+  const res = await fetchWithAuth("/games", {
     method: "POST",
     body: JSON.stringify({ name }),
   });
@@ -53,7 +53,7 @@ export async function createGame(name: string): Promise<any> {
  * Töröl egy játékot a megadott azonosító alapján.
  */
 export async function deleteGame(gameId: string): Promise<any> {
-  const res = await fetchWithAuth(`http://localhost:3011/games/${gameId}`, {
+  const res = await fetchWithAuth(`/games/${gameId}`, {
     method: "DELETE",
   });
   if (!res.ok) {

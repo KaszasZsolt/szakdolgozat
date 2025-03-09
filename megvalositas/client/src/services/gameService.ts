@@ -1,7 +1,7 @@
 import { fetchWithAuth } from "./apiClient";
 
 export async function createGame(name: string, mergedConfig: Record<string, unknown>) {
-  const res = await fetchWithAuth("http://localhost:3011/games/config", {
+  const res = await fetchWithAuth("/games/config", {
     method: "POST",
     body: JSON.stringify({
       name,
@@ -16,7 +16,7 @@ export async function createGame(name: string, mergedConfig: Record<string, unkn
 }
 
 export async function updateGame(gameId: string, mergedConfig: Record<string, unknown>) {
-  const res = await fetchWithAuth(`http://localhost:3011/games/${gameId}/config`, {
+  const res = await fetchWithAuth(`/games/${gameId}/config`, {
     method: "PUT",
     body: JSON.stringify({
       config: JSON.stringify(mergedConfig),
