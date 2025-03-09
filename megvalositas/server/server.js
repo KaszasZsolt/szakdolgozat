@@ -18,7 +18,7 @@ app.set('trust proxy', true);
 app.use(cors({
   origin: process.env.NODE_ENV === 'development'
     ? "http://localhost:5173"
-    : "https://kartyajatek.soon.it/",
+    : "https://kartyajatek.soon.it",
   credentials: true
 }));
 
