@@ -29,11 +29,10 @@ export class GameEngine {
     }
 
     // A "kezdő állapot" beállítása
-    const initialState =
-      config.states["Setup"] !== undefined
-        ? "Setup"
-        : Object.keys(config.states)[0];
-
+    const initialState =Object.keys(config.states)[0];
+    if (!initialState) {
+      throw new Error("A konfiguráció nem tartalmaz állapotokat!");
+    }
     this.currentState = initialState;
     // Betesszük a history-be az első állapotot
     this.stateHistory.push(this.currentState);
