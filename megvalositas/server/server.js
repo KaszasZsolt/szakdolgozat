@@ -5,6 +5,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 31112;
@@ -243,7 +246,20 @@ app.delete('/games/:gameId', authenticateToken, async (req, res) => {
   }
 });
 
-// HTTP szerver indítása
-app.listen(PORT, () => {
-  console.log(`HTTP szerver fut a ${PORT}-es porton`);
-});
+let serverInstance;
+
+if (process.env.NODE_ENV === 'development') {
+  serverInstance = http.createServer(app);
+  serverInstance.listen(PORT, () => {
+    console.log(`HTTP szerver fut a ${PORT}-es porton`);
+  });
+} else {
+  const httpsOptions = {
+    key: fs.readFileSync('/home/ubuntu/syndicateWebsite/server/ssl/privkey.pem'),
+    cert: fs.readFileSync('/home/ubuntu/syndicateWebsite/server/ssl/fullchain.pem')
+  };
+  serverInstance = https.createServer(httpsOptions, app);
+  serverInstance.listen(PORT, '0.0.0.0', () => {
+    console.log(`HTTPS szerver fut a ${PORT}-es porton`);
+  });
+}
