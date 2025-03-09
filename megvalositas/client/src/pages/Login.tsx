@@ -1,63 +1,51 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { login, register } from "@/services/authService";
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
+interface RegisterFormData extends LoginFormData {
+  confirmPassword: string;
+}
 const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Ha regisztráció, akkor confirmPassword-t is kezelünk
-  const [formData, setFormData] = useState(
+  const [formData, setFormData] = useState<LoginFormData | RegisterFormData>(
     isLogin
       ? { email: "", password: "" }
       : { email: "", password: "", confirmPassword: "" }
   );
-
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
-    // Regisztrációnál ellenőrizzük, hogy a két jelszó megegyezik-e
-    if (!isLogin && formData.password !== formData.confirmPassword) {
+    // Regisztráció esetén ellenőrizzük, hogy a két jelszó megegyezik-e
+    if (!isLogin && (formData as RegisterFormData).confirmPassword !== formData.password) {
       setErrorMessage(t("auth.password_mismatch", "A jelszavak nem egyeznek meg."));
       return;
     }
 
-    // Választjuk ki a megfelelő végpontot
-    const endpoint = isLogin ? "/login" : "/register";
-
     try {
-      const response = await fetch(`http://localhost:3011${endpoint}`, {
-        // Amennyiben helyben futtatod, pl. http://localhost:3011
-        // pl.: fetch(`http://localhost:3011${endpoint}`, { ... })
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Hiba történt");
-      }
-
-      // Ha bejelentkezésről van szó, tároljuk a token-t és navigáljunk tovább
-      if (isLogin && data.accessToken) {
-        localStorage.setItem("token", data.accessToken);
-        navigate("/dashboard"); // Vagy a kívánt útvonal
+      if (isLogin) {
+        const data = await login(formData.email, formData.password);
+        if (data.accessToken) {
+          localStorage.setItem("token", data.accessToken);
+          navigate("/dashboard");
+        }
       } else {
-        // Regisztráció esetén értesítjük a felhasználót, és átirányíthatjuk a bejelentkezés oldalára
+        const data = await register(formData.email, formData.password);
         alert(data.message);
         navigate("/login");
       }
@@ -106,8 +94,7 @@ const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
             <Input
               type="password"
               name="confirmPassword"
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              value={(formData as any).confirmPassword || ""}
+              value={(formData as RegisterFormData).confirmPassword || ""}
               onChange={handleChange}
               placeholder={t("auth.confirm_password_placeholder", "Ismételje meg a jelszót")}
               required
