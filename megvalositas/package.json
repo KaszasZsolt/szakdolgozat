@@ -20,5 +20,8 @@
   "homepage": "https://github.com/KaszasZsolt/kincso_nails#readme",
   "dependencies": {
     "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10"
   }
 }
