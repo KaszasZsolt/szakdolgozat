@@ -90,6 +90,8 @@ const GameCreationPage: React.FC = () => {
   const [isPreviewOpen, setPreviewOpen] = useState(true);
   const [isMermaidCodeOpen, setMermaidCodeOpen] = useState(true);
   const [isDiagramOpen, setDiagramOpen] = useState(true);
+  const [isJsonEditorOpen, setJsonEditorOpen] = useState(true);
+  const [isMainSectionOpen, setMainSectionOpen] = useState(true);
 
   // Játékmenet funkciók és GameEngine
   const [generatedCode, setGeneratedCode] = useState<string>(initialGeneratedCode);
@@ -132,6 +134,10 @@ const GameCreationPage: React.FC = () => {
         toggleMermaidCode={() => setMermaidCodeOpen(!isMermaidCodeOpen)}
         isDiagramOpen={isDiagramOpen}
         toggleDiagram={() => setDiagramOpen(!isDiagramOpen)}
+        isJsonEditorOpen={isJsonEditorOpen}
+        toggleJsonEditor={() => setJsonEditorOpen(!isJsonEditorOpen)}
+        isMainSectionOpen={isMainSectionOpen}
+        toggleMainSectionOpen={() => setMainSectionOpen(!isMainSectionOpen)}
       />
 
       <GameplayFunctionsSection

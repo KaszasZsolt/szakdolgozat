@@ -9,7 +9,7 @@ interface MermaidCodeSectionProps {
 const MermaidCodeSection: React.FC<MermaidCodeSectionProps> = ({ mermaidCode, isOpen, toggleOpen }) => {
   if (!mermaidCode) return null;
   return (
-    <section className="mb-8">
+    <section className="mt-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Mermaid Setup</h2>
         <button

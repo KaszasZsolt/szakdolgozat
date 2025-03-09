@@ -28,7 +28,7 @@ const GameSaveSection: React.FC<GameSaveSectionProps> = ({
     const merged = { config: previewConfig, code: generatedCode };
 
     try {
-      const data = await createGame(token, previewConfig.game || "Ismeretlen játék", merged);
+      const data = await createGame(previewConfig.game || "Ismeretlen játék", merged);
       if (data.id) {
         setGameId(data.id);
       } else {
@@ -58,7 +58,7 @@ const GameSaveSection: React.FC<GameSaveSectionProps> = ({
     const merged = { config: previewConfig, code: generatedCode };
 
     try {
-      await updateGame(token, gameId, merged);
+      await updateGame(gameId, merged);
       alert("Meglévő játék frissítve a kóddal!");
     } catch (err: unknown) {
       console.error("Hiba a frissítés során:", err);

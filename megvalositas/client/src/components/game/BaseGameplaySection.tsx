@@ -3,13 +3,14 @@ import EditorSection from "./EditorSection";
 import PreviewSection from "./PreviewSection";
 import MermaidCodeSection from "./MermaidCodeSection";
 import DiagramSection from "./DiagramSection";
-import { GameConfig } from "../../utils/GameEngine";
-import CustomJsonEditor from "../custom/CustomJsonEditor";
+import JsonEditorSection from "./JsonEditorSection";
+
 interface BaseGameplaySectionProps {
   config: string;
   setConfig: (value: string) => void;
   previewConfig: object | null;
   mermaidCode: string;
+  // Az egyes alrészek toggle állapotai:
   isEditorOpen: boolean;
   toggleEditor: () => void;
   isPreviewOpen: boolean;
@@ -18,6 +19,10 @@ interface BaseGameplaySectionProps {
   toggleMermaidCode: () => void;
   isDiagramOpen: boolean;
   toggleDiagram: () => void;
+  isJsonEditorOpen: boolean;
+  toggleJsonEditor: () => void;
+  isMainSectionOpen: boolean;
+  toggleMainSectionOpen: () => void;
 }
 
 const BaseGameplaySection: React.FC<BaseGameplaySectionProps> = ({
@@ -33,20 +38,30 @@ const BaseGameplaySection: React.FC<BaseGameplaySectionProps> = ({
   toggleMermaidCode,
   isDiagramOpen,
   toggleDiagram,
+  isJsonEditorOpen,
+  toggleJsonEditor,
+  isMainSectionOpen,
+  toggleMainSectionOpen,
 }) => {
   return (
     <section className="mb-8 border p-4 rounded border-gray-700 flex flex-col h-full">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Alap Játékmenet</h2>
+        <h2 className="text-3xl font-semibold">Alap Játékmenet</h2>
         <button
           className="px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-          onClick={toggleEditor}
+          onClick={toggleMainSectionOpen}
         >
-          {isEditorOpen ? "⬆ Összecsukás" : "⬇ Kinyitás"}
+          {isMainSectionOpen ? "⬆ Összecsukás" : "⬇ Kinyitás"}
         </button>
       </div>
-      {isEditorOpen && (
+      {isMainSectionOpen && (
         <>
+          <JsonEditorSection
+            config={config}
+            setConfig={setConfig}
+            isOpen={isJsonEditorOpen}
+            toggleOpen={toggleJsonEditor}
+          />
           <EditorSection
             config={config}
             setConfig={setConfig}
@@ -68,18 +83,6 @@ const BaseGameplaySection: React.FC<BaseGameplaySectionProps> = ({
             isOpen={isDiagramOpen}
             toggleOpen={toggleDiagram}
           />
-
-          {isDiagramOpen && (
-            <div className="mt-4 flex-grow overflow-auto">
-              <CustomJsonEditor
-                config={JSON.parse(config)}
-                onConfigChange={(newConfig: GameConfig) =>
-                  setConfig(JSON.stringify(newConfig, null, 2))
-                }
-              />
-            </div>
-          )}
-
         </>
       )}
     </section>

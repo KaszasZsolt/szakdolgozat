@@ -28,7 +28,7 @@ const DiagramSection: React.FC<DiagramSectionProps> = ({ mermaidCode, isOpen, to
 
   if (!mermaidCode) return null;
   return (
-    <section className="mb-8">
+    <section className="mt-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Mermaid Diagram</h2>
         <button

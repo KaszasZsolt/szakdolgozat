@@ -9,9 +9,9 @@ interface EditorSectionProps {
 }
 
 const EditorSection: React.FC<EditorSectionProps> = ({ config, setConfig, isOpen, toggleOpen }) => (
-  <section className="mb-8">
+  <section className="mt-4">
     <div className="flex justify-between items-center">
-      <h2 className="text-2xl font-semibold">Játék Létrehozás</h2>
+      <h2 className="text-2xl font-semibold">JSON szerkesztő</h2>
       <button
         className="px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
         onClick={toggleOpen}
