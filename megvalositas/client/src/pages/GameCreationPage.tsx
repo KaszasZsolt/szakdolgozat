@@ -86,10 +86,10 @@ const GameCreationPage: React.FC = () => {
   );
 
   // UI-szekciók nyitottsága
-  const [isEditorOpen, setEditorOpen] = useState(true);
-  const [isPreviewOpen, setPreviewOpen] = useState(true);
-  const [isMermaidCodeOpen, setMermaidCodeOpen] = useState(true);
-  const [isDiagramOpen, setDiagramOpen] = useState(true);
+  const [isEditorOpen, setEditorOpen] = useState(false);
+  const [isPreviewOpen, setPreviewOpen] = useState(false);
+  const [isMermaidCodeOpen, setMermaidCodeOpen] = useState(false);
+  const [isDiagramOpen, setDiagramOpen] = useState(false);
   const [isJsonEditorOpen, setJsonEditorOpen] = useState(true);
   const [isMainSectionOpen, setMainSectionOpen] = useState(true);
 
