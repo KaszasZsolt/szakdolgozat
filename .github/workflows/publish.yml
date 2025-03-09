@@ -15,10 +15,10 @@ jobs:
 
       # 📌 1️⃣ Kliensek telepítése és buildelése
       - name: Install client dependencies
-        run: cd client && npm install
+        run: cd megvalositas/client && npm install
 
       - name: Build the client project
-        run: cd client && npm run build
+        run: cd megvalositas/client && npm run build
 
       # 📌 2️⃣ SSH kulcs beállítása
       - name: Set up SSH for client deployment
@@ -32,7 +32,7 @@ jobs:
         run: |
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
-            ./client/dist/ \
+            ./megvalositas/client/dist/ \
             ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/megvalositas/client/dist/
 
       # 📌 4️⃣ Az alkalmazás indítása PM2-vel (kliensek) a 31111-es porton
@@ -55,7 +55,7 @@ jobs:
 
       # 📌 1️⃣ Szerver függőségek telepítése
       - name: Install server dependencies
-        run: cd server && npm install
+        run: cd megvalositas/server && npm install
 
       # 📌 2️⃣ SSH kulcs beállítása
       - name: Set up SSH for server deployment
@@ -69,7 +69,7 @@ jobs:
         run: |
           rsync -avz --delete --exclude='ssl' --exclude='.env' \
             -e "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/id_rsa" \
-            ./server/ \
+            ./megvalositas/server/ \
             ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/megvalositas/server/
 
       # 📌 4️⃣ A szerver alkalmazás indítása/újraindítása PM2-vel
