@@ -4,7 +4,7 @@ export interface GameConfig {
   game: string;
   states: {
     [key: string]: {
-      actions: { name: string; code: string }[];
+      actions: { name: string; code?: string }[];
       next: string | null;
     };
   };
