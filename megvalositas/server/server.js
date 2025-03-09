@@ -255,8 +255,8 @@ if (process.env.NODE_ENV === 'development') {
   });
 } else {
   const httpsOptions = {
-    key: fs.readFileSync('/home/ubuntu/syndicateWebsite/server/ssl/privkey.pem'),
-    cert: fs.readFileSync('/home/ubuntu/syndicateWebsite/server/ssl/fullchain.pem')
+    key: fs.readFileSync('/home/ubuntu/kartyajatek/megvalositas/server/ssl/privkey.pem'),
+    cert: fs.readFileSync('/home/ubuntu/kartyajatek/megvalositas/server/ssl/fullchain.pem')
   };
   serverInstance = https.createServer(httpsOptions, app);
   serverInstance.listen(PORT, '0.0.0.0', () => {
