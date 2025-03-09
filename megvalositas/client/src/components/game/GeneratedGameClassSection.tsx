@@ -20,7 +20,6 @@ interface GeneratedGameClassSectionProps {
 
 const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({ previewConfig, onCodeChange, initialCode = "" }) => {
   const [generatedCode, setGeneratedCode] = useState<string>(initialCode);
-  const [isEditorOpen, setEditorOpen] = useState<boolean>(true);
 
   // Ha nincs initialCode, és a felhasználó rákattint a "Kód generálása" gombra,
   // akkor generáljuk a kódot.
@@ -55,14 +54,7 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({ p
       </div>
       {generatedCode ? (
         <div className="mt-4">
-          <button
-            onClick={() => setEditorOpen(!isEditorOpen)}
-            className="px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 mb-2"
-          >
-            {isEditorOpen ? "Editor elrejtése" : "Editor megjelenítése"}
-          </button>
-          {isEditorOpen && (
-            <Editor
+           <Editor
               height="300px"
               theme="vs-dark"
               defaultLanguage="typescript"
@@ -82,7 +74,6 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({ p
                 fontSize: 14,
               }}
             />
-          )}
         </div>
       ) : (
         <p className="mt-4">

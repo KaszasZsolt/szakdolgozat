@@ -1,10 +1,11 @@
 import { toValidMethodName } from "./toValidMethorName";
+import { baseFunctions } from "./baseFunctions";
 
 interface GameConfig {
   game: string;
   states: {
     [key: string]: {
-      actions: { name: string; code: string }[];
+      actions: { name: string; code?: string }[];
       next: string | null;
     };
   };
@@ -17,48 +18,75 @@ interface GameConfig {
 export function generateGameClassFromConfig(config: GameConfig): string {
   const className = config.game.replace(/\s+/g, "");
 
-  // -- A class-t NEM exportáljuk! 
+  const usedBaseFunctions = new Set<keyof typeof baseFunctions>();
+
+  for (const stateData of Object.values(config.states)) {
+    for (const action of stateData.actions) {
+      if (action.code && action.code in baseFunctions) {
+        usedBaseFunctions.add(action.code as keyof typeof baseFunctions);
+      }
+    }
+  }
+
   let code = `
 /**
- * Ezt a kódot a JSON konfiguráció alapján generáltuk.
- * A class tartalmazza a játék állapotait és a hozzájuk tartozó action-öket.
- * Figyelem: NINCS 'export class', mert a globális scope-ba akarjuk regisztrálni eval-lal.
+ * Generált játékosztály.
  */
 class ${className} {
   constructor() {
-    // Inicializálás, ha szükséges
     console.log("A(z) ${config.game} játék példánya létrejött.");
   }
+
+  //#region ALAP FUNKCIÓK
+`;
+
+  usedBaseFunctions.forEach(funcName => {
+    code += `
+  /**
+   * Alap funkció: ${funcName}
+   */
+  public ${funcName} = ${baseFunctions[funcName].func.toString()};
+`;
+  });
+
+  code += `
+  //#endregion
+  //#region CUSTOM FUNKCIÓK
 `;
 
   for (const [stateName, stateData] of Object.entries(config.states)) {
     code += `
   /**
-   * [State] ${stateName}
+   * Állapot: ${stateName}
    */
   public ${toValidMethodName(stateName)}() {
-    // TODO: Implement '${stateName}' állapot logikája
+    console.log("Belépés az állapotba: ${stateName}");
   }
 `;
+
     for (const action of stateData.actions) {
       const methodName = toValidMethodName(action.name);
+      const actionCall = action.code && usedBaseFunctions.has(action.code as keyof typeof baseFunctions)  
+        ? `this.${action.code}();` 
+        : "";
+
       code += `
   /**
-   * Action: ${action.name}
+   * Akció: ${action.name}
    */
   public ${methodName}() {
-    // TODO: Implement '${action.name}'
+    console.log("Fut az akció: ${toValidMethodName(action.name)}");
+    ${actionCall}
   }
 `;
     }
   }
 
-  // A végén a class-t ráírjuk a window objektumra, így a GameEngine látni fogja:
   code += `
-} // <-- class vége
+  //#endregion
+} 
 
 (window as any)["${className}"] = ${className};
 `;
-
   return code;
 }

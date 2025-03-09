@@ -1,5 +1,5 @@
 import React from "react";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -7,6 +7,7 @@ import {
   arrayMove,
   useSortable,
 } from "@dnd-kit/sortable";
+import { baseFunctions } from "../../utils/baseFunctions";
 import { CSS } from "@dnd-kit/utilities";
 
 interface GameConfig {
@@ -29,6 +30,7 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
   const [editedNames, setEditedNames] = useState<{ [key: string]: string }>(
     () => Object.keys(config.states).reduce((acc, key) => ({ ...acc, [key]: key }), {})
   );
+  const [hoveredFunction, setHoveredFunction] = useState<string | null>(null);
 
   useEffect(() => {
     setEditedNames(() =>
@@ -37,8 +39,8 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
         return acc;
       }, {} as { [key: string]: string })
     );
-  }, [config.states]); 
-  
+  }, [config.states]);
+
   const handleAddState = () => {
     const stateName = prompt("Új állapot neve:");
     if (!stateName || config.states[stateName]) return;
@@ -200,7 +202,8 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                   <SortableContext items={stateData.actions.map((_, i) => `${stateName}-${i}`)} strategy={verticalListSortingStrategy}>
                     {stateData.actions.map((action, index) => (
                       <SortableItem key={`${stateName}-${index}`} id={`${stateName}-${index}`}>
-                        <div className="flex gap-1 mb-1 p-1 bg-gray-600 rounded cursor-grab">
+                        <div className="flex gap-1 mb-1 p-1 bg-gray-600 rounded cursor-grab items-center">
+                          {/* Akció neve (input mező) */}
                           {!hideActionNames && (
                             <input
                               type="text"
@@ -209,19 +212,42 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                               className="text-xs bg-gray-700 text-white border-none flex-1 px-1 py-1 rounded w-20"
                             />
                           )}
-                          <input
-                            type="text"
+
+                          {/* Akció kód (Dropdown menü) */}
+                          <select
                             value={action.code || ""}
                             onChange={(e) => handleActionChange(stateName, index, "code", e.target.value)}
+                            onMouseLeave={() => setHoveredFunction(null)} // Ha elhagyjuk a selectet, töröljük az előnézetet
                             className="text-xs bg-gray-700 text-white border-none flex-1 px-1 py-1 rounded w-28"
-                            placeholder="Akció kód..."
-                          />
+                          >
+                            <option value="">Válassz egy akciót...</option>
+                            {Object.keys(baseFunctions).map((funcKey) => (
+                              <option
+                                key={funcKey}
+                                value={funcKey}
+                                onMouseEnter={() => setHoveredFunction(funcKey)} // Egérrel fölé megyünk → előnézet
+                              >
+                                {funcKey}
+                              </option>
+                            ))}
+                          </select>
+
+                          {/* Leírás mindig látható, ha van kiválasztott vagy előnézetben lévő elem */}
+                          <span
+                            className="text-gray-300 text-xs ml-2 italic w-80 truncate"
+                            title={baseFunctions[hoveredFunction as keyof typeof baseFunctions || action.code as keyof typeof baseFunctions]?.description || "Nincs leírás"}
+                          >
+                            {baseFunctions[hoveredFunction as keyof typeof baseFunctions || action.code as keyof typeof baseFunctions]?.description || "Nincs leírás"}
+                          </span>
+
+                          {/* Akció törlése */}
                           <button className="text-red-400 text-xs" onClick={() => handleDeleteAction(stateName, index)}>
                             ❌
                           </button>
                         </div>
                       </SortableItem>
                     ))}
+
                   </SortableContext>
                 </DndContext>
 

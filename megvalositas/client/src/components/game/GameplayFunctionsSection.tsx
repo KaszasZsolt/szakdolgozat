@@ -34,27 +34,9 @@ const GameplayFunctionsSection: React.FC<GameplayFunctionsSectionProps> = ({
   return (
     <section className="mb-8 border p-4 rounded border-gray-700">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Játékmenet</h2>
+        <h2 className="text-2xl font-semibold">Játék Funkciók</h2>
       </div>
       <div className="mt-4">
-        {previewConfig ? (
-          Object.entries(previewConfig.states).map(([stateName, stateConfig]) => (
-            <div key={stateName} className="mb-4 border p-2 rounded border-gray-600">
-              <h3 className="text-xl font-bold">{stateName}</h3>
-              {stateConfig.actions.map((action, index) => (
-                <div key={index} className="ml-4 mt-2">
-                  <p className="font-semibold">{action.name}</p>
-                  <pre className="bg-gray-800 p-2 rounded text-sm font-mono">
-                    {action.code}
-                  </pre>
-                </div>
-              ))}
-            </div>
-          ))
-        ) : (
-          <p>Először generálja a konfigurációt...</p>
-        )}
-
         <GeneratedGameClassSection
           previewConfig={previewConfig}
           onCodeChange={setGeneratedCode}
