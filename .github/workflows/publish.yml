@@ -33,15 +33,15 @@ jobs:
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
             ./client/dist/ \
-            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/dist/
+            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/megvalositas/client/dist/
 
-      # 📌 4️⃣ Az alkalmazás indítása PM2-vel (kliensek) a 3010-es porton
+      # 📌 4️⃣ Az alkalmazás indítása PM2-vel (kliensek) a 31111-es porton
       - name: Restart client application with PM2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@217.182.76.202 << 'EOF'
-            cd /home/ubuntu/kartyajatek
+            cd /home/ubuntu/kartyajatek/megvalositas/client
             pm2 delete kartyajatek_client || true
-            pm2 start npx --name "kartyajatek_client" -- serve -s dist -l 3010
+            pm2 start npx --name "kartyajatek_client" -- serve -s dist -l 31111
             pm2 save
           EOF
 
@@ -70,13 +70,13 @@ jobs:
           rsync -avz --delete --exclude='ssl' --exclude='.env' \
             -e "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/id_rsa" \
             ./server/ \
-            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/server/
+            ubuntu@217.182.76.202:/home/ubuntu/kartyajatek/megvalositas/server/
 
       # 📌 4️⃣ A szerver alkalmazás indítása/újraindítása PM2-vel
       - name: Restart server with PM2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@217.182.76.202 << 'EOF'
-            cd /home/ubuntu/kartyajatek/server
+            cd /home/ubuntu/kartyajatek/megvalositas/server
             pm2 delete kartyajatek_server || true
             pm2 start npm --name "kartyajatek_server" -- start
             pm2 save
