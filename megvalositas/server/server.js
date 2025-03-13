@@ -179,6 +179,25 @@ app.post('/games', authenticateToken, async (req, res) => {
   }
 });
 
+// Egyedi játék lekérése (az adott gameId-hoz)
+app.get('/games/:gameId', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { gameId } = req.params;
+    const [rows] = await pool.query(
+      'SELECT * FROM games WHERE id = ? AND user_id = ?',
+      [gameId, userId]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "A játék nem található vagy nem tartozik a felhasználóhoz." });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Hiba a játék lekérésekor:", err);
+    res.status(500).json({ message: "Hiba történt a játék lekérésekor." });
+  }
+});
+
 // Játékok lekérése – csak a bejelentkezett felhasználó játékai
 app.get('/games', authenticateToken, async (req, res) => {
   try {

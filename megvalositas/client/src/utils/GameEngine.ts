@@ -29,7 +29,7 @@ export class GameEngine {
     }
 
     // A "kezdő állapot" beállítása
-    const initialState =Object.keys(config.states)[0];
+    const initialState = Object.keys(config.states)[0];
     if (!initialState) {
       throw new Error("A konfiguráció nem tartalmaz állapotokat!");
     }
@@ -42,7 +42,7 @@ export class GameEngine {
    * Egylépéses végrehajtás:
    * - Lefut az aktuális állapot metódusa
    * - Lefutnak az abban definiált akciók
-   * - Továbbállunk a next állapotra (ha van)
+   * - Továbbállunk a next állapotra (ha van), ellenőrzi a továbblépés feltételét
    */
   public runOneStep(): void {
     if (!this.currentState) {
@@ -69,8 +69,22 @@ export class GameEngine {
       }
     }
 
-    // Átlépés a következő állapotra (ha van)
-    this.currentState = stateData.next || "";
+    // Feltétel ellenőrzése az állapotból való továbblépéshez
+    const conditionMethodName = `${toValidMethodName(this.currentState)}NextCondition`;
+
+    // Ha a metódus létezik a gameInstance-ben, akkor hívjuk meg
+    if (typeof this.gameInstance[conditionMethodName] === "function") {
+      const shouldTransition = this.gameInstance[conditionMethodName]();
+      if (shouldTransition) {
+        this.currentState = stateData.next || "";
+      } else {
+        console.log("A feltétel nem teljesült, maradunk az aktuális állapotban.");
+        return;
+      }
+    } else {
+      this.currentState = stateData.next || "";
+    }
+
     if (this.currentState) {
       this.stateHistory.push(this.currentState);
     } else {

@@ -74,7 +74,7 @@ const GameSaveSection: React.FC<GameSaveSectionProps> = ({
         } bg-${gameId ? "green-500" : "blue-500"}`}
         onClick={gameId ? handleUpdateExistingGameCode : handleCreateNewGameWithCode}
       >
-        {gameId ? "Meglévő játék frissítése kóddal" : "Új játék mentése"}
+        {gameId ? "Meglévő játék frissítése" : "Új játék mentése"}
       </button>
     </div>
   );

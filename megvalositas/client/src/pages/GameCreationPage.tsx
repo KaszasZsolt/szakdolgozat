@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import mermaid from "mermaid";
 import BaseGameplaySection from "../components/game/BaseGameplaySection";
@@ -7,6 +7,7 @@ import GameSaveSection from "../components/game/GameSaveSection";
 import EngineTestSection from "../components/game/EngineTestSection";
 import { useGameConfig } from "../hooks/useGameConfig";
 import { GameEngine, GameConfig } from "../utils/GameEngine";
+import { fetchGameById } from "../services/gameService";
 
 interface LocationState {
   config?: string;
@@ -21,8 +22,7 @@ const GameCreationPage: React.FC = () => {
 
   const [gameId, setGameId] = useState<string | null>(savedGameId || null);
 
-  // Alapértelmezett konfiguráció, ha nincs mentett
-  const defaultConfigObj: GameConfig = {
+  const defaultConfigObj: GameConfig = useMemo(() => ({
     game: savedGameName || "Teszt",
     states: {
       Setup: {
@@ -59,7 +59,7 @@ const GameCreationPage: React.FC = () => {
         next: null,
       },
     },
-  };
+  }), [savedGameName]);
 
   let defaultConfigString: string;
   let initialGeneratedCode: string = "";
@@ -97,8 +97,40 @@ const GameCreationPage: React.FC = () => {
   const [generatedCode, setGeneratedCode] = useState<string>(initialGeneratedCode);
   const [engine, setEngine] = useState<GameEngine | null>(null);
 
+  useEffect(() => {
+    if (gameId) {
+      fetchGameById(gameId)
+        .then((game) => {
+          let newConfigString = "";
+          let newGeneratedCode = "";
+          if (game.config) {
+            try {
+              const parsed = JSON.parse(game.config);
+              if (parsed.config) {
+                newConfigString = JSON.stringify(parsed.config, null, 2);
+              } else {
+                newConfigString = game.config;
+              }
+              if (parsed.code) {
+                newGeneratedCode = parsed.code;
+              }
+            } catch (e) {
+              newConfigString = game.config;
+            }
+          } else {
+            newConfigString = JSON.stringify(defaultConfigObj, null, 2);
+          }
+          setConfig(newConfigString);
+          setGeneratedCode(newGeneratedCode);
+        })
+        .catch((err) => {
+          console.error("Konfiguráció lekérése hiba:", err);
+        });
+    }
+  }, [gameId, setConfig, setGeneratedCode, defaultConfigObj]);
+
   // Mermaid inicializálása
-  React.useEffect(() => {
+  useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
       theme: "base",
@@ -148,7 +180,7 @@ const GameCreationPage: React.FC = () => {
       />
 
       {/* EngineTestSection beillesztése, ha van engine */}
-      {engine && <EngineTestSection engine={engine} setEngine={setEngine} />}
+      {engine && <EngineTestSection engine={engine} setEngine={setEngine} previewConfig={JSON.parse(config)} />}
 
       <GameSaveSection
         previewConfig={previewConfig}

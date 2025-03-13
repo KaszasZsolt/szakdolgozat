@@ -84,7 +84,24 @@ class ${className} {
 
   code += `
   //#endregion
-} 
+  //#region Next state condition methods
+`;
+  // Külön region, ahol minden állapothoz generálunk egy feltétel metódust
+  for (const stateName of Object.keys(config.states)) {
+    code += `
+  /**
+   * Feltétel a(z) "${stateName}" állapotból a következő állapotba lépéshez.
+   * Itt add meg, hogy mikor térjen át a játék a következő állapotra.
+   */
+  public ${toValidMethodName(stateName)}NextCondition(): boolean {
+    // TODO: Implementáld a logikát.
+    return true;
+  }
+`;
+  }
+  code += `
+  //#endregion
+}
 
 (window as any)["${className}"] = ${className};
 `;
