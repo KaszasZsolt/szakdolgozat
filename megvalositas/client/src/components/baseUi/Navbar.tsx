@@ -8,13 +8,18 @@ import GameSaveSection from "../game/GameSaveSection";
 import { GameConfig } from "../../utils/GameEngine";
 
 interface NavbarProps {
-  previewConfig: GameConfig | null;
-  generatedCode: string;
-  gameId: string | null;
-  setGameId: (id: string) => void;
+  previewConfig?: GameConfig | null;
+  generatedCode?: string;
+  gameId?: string | null;
+  setGameId?: (id: string) => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ previewConfig, generatedCode, gameId, setGameId }) => {
+const Navbar: React.FC<NavbarProps> = ({
+  previewConfig = null,
+  generatedCode = '',
+  gameId = null,
+  setGameId = () => {}
+}) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const currentLang = i18n.language || 'hu';

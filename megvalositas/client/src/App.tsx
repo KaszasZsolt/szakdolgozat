@@ -5,21 +5,12 @@ import Footer from "./components/baseUi/Footer";
 import { routesConfig } from "./config/routesConfig";
 import Dashboard from "./pages/Dashboard";
 import GameCreationPage from "./pages/GameCreationPage";
-import { useState } from "react";
 
 function App() {
   const currentRoutes =routesConfig.hu;
-  const defaultPreviewConfig = null;
-  const defaultGeneratedCode = "";
-  const [gameId, setGameId] = useState<string | null>(null);
   return (
     <BrowserRouter>
-      <Navbar
-        previewConfig={defaultPreviewConfig}
-        generatedCode={defaultGeneratedCode}
-        gameId={gameId}
-        setGameId={setGameId}
-      />
+      <Navbar />
       <Routes>
         <Route path={currentRoutes.home} element={<Home />} />
         <Route path="/" element={<Home />} />
