@@ -8,7 +8,7 @@ import EngineTestSection from "../components/game/EngineTestSection";
 import { useGameConfig } from "../hooks/useGameConfig";
 import { GameEngine, GameConfig } from "../utils/GameEngine";
 import { fetchGameById } from "../services/gameService";
-
+import Navbar from "../components/baseUi/Navbar";
 interface LocationState {
   config?: string;
   gameName?: string;
@@ -188,7 +188,12 @@ const GameCreationPage: React.FC = () => {
         gameId={gameId}
         setGameId={setGameId}
       />
-
+      <Navbar
+        previewConfig={previewConfig}
+        generatedCode={generatedCode}
+        gameId={gameId}
+        setGameId={setGameId}
+      />
       {error && <div className="mt-4 text-red-500">{error}</div>}
     </div>
   );
