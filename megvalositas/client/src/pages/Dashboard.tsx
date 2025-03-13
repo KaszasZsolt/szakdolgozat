@@ -70,9 +70,21 @@ const Dashboard = () => {
     });
   };
 
+  // Segédfüggvény a megjelenítendő játék név meghatározásához
+  const getDisplayName = (game: Game): string => {
+    let displayName = game.name;
+    try {
+      const parsed = JSON.parse(game.config || "");
+      displayName = parsed?.config?.game || displayName;
+    } catch (error) {
+      console.error("Hibás JSON formátum a game.config-ban:", error);
+    }
+    return displayName;
+  };
+
   return (
-    <div className=" lg:px-[22vw] md:px-20 px-8 pt-[12vh] pb-[4vh] text-white">
-      <h1 className="text-3xl font-bold text-center mb-6">Dashboard</h1>
+    <div className="lg:px-[22vw] md:px-20 px-8 pt-[12vh] pb-[4vh] text-white">
+      <h1 className="text-3xl font-bold text-center mb-6">Főoldal</h1>
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
       {userData ? (
         <div className="text-center">
@@ -98,7 +110,7 @@ const Dashboard = () => {
               <ul className="list-disc list-inside space-y-2">
                 {games.map((game) => (
                   <li key={game.id} className="flex items-center justify-between">
-                    <span className="text-lg">{game.name}</span>
+                    <span className="text-lg">{getDisplayName(game)}</span>
                     <div className="flex gap-2">
                       <button onClick={() => handleEditGame(game)} className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded">
                         Szerkesztés
