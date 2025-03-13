@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ReactNode } from "react";
 
 const Layout = ({ children }: { children: ReactNode }) => {
-  const defaultPreviewConfig = null; // or your desired default config
+  const defaultPreviewConfig = null;
   const defaultGeneratedCode = "";
   const [gameId, setGameId] = useState<string | null>(null);
   return (
