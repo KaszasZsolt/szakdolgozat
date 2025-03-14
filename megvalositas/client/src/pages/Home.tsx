@@ -52,7 +52,7 @@ const Home = () => {
       tasks:
         "Szobák létrehozása és többjátékos rendszer kialakítása<br> - <strong>Frontend</strong>: UI szobakezeléshez és csatlakozáshoz.<br> - <strong>Backend</strong>: Szobák és játékszabályok API implementálása.",
     },
-    { 
+    {
       id: 9,
       period: "2024.04.01–04.07. (14. hét)",
       tasks:
@@ -78,15 +78,15 @@ const Home = () => {
   ];
 
   return (
-    <div className="bg-white lg:px-[22vw] md:px-20 px-8 pt-[12vh] pb-[4vh]">
+    <div className="bg-white lg:px-[22vw] md:px-16 sm:px-10 px-4 pt-[12vh] pb-[4vh]">
       {/* Fő cím */}
       <h1 className="text-3xl font-bold text-primary text-center text-white">
         {t("news.title", "Fejlesztési Időbeosztás")}
       </h1>
 
       {/* Időbeosztás */}
-      <div className="mt-8 p-6 bg-color-motto rounded-lg shadow-md">
-        <table className="w-full mt-4 border-collapse border border-gray-300">
+      <div className="mt-8 p-6 bg-color-motto rounded-lg shadow-md overflow-x-auto flex justify-center">
+        <table className="min-w-full mt-4 border-collapse border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
               <th className="border border-gray-300 px-4 py-2">
