@@ -22,7 +22,6 @@ export class GameEngine {
   private stateHistory: string[] = [];
 
   // Választott akció és a Promise-mechanizmus a felhasználói döntéshez
-  private selectedAction: string | null = null;
   private selectionPromise: Promise<string | null> | null = null;
   private selectionResolver: ((action: string | null) => void) | null = null;
 
