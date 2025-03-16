@@ -6,44 +6,41 @@
     font-family: "BrushScript";
     src: url("./assets/fonts/BrushScriptStd.otf");
 }
+
 :root {
-  /* Alap szín: sötétkék, enyhén áttetsző */
   --base-color: rgba(6, 20, 27, 0.76);
-
-  /* Világos mód */
-  --outline-color: var(--base-color);                    /* Finom kontúr */
-  --primary-color: var(--base-color);        
-  --primary-color-text:    #000000;                   /* Fő szín: kontrasztos, jól olvasható */
-  --primary-color-hover: rgba(6, 20, 27, 1);              /* Hover állapot: telítettebb */
-  --primary-background-color: #f0f2f5;         
-  --secondory-background-color:#d0d7e6;             /* A fő, sötét alapszín háttérként */
-  --secondary-color: #000000;                            /* Tiszta fehér elemekhez */
-  --primary-color-active: rgba(6, 20, 27, 0.9);           /* Aktív állapot, egy kicsit sötétebb */
-  --background-color-w-opacity: rgba(0, 0, 0, 0);         /* Átlátszó segédváltozó */
-  --button-background-color: #0d1f2f;                     /* Gombok sötét, elegáns háttere */
-  --colorFadeIn: var(--base-color);                      /* Fade in effektus színe */
-}
-
-/* Dark mode – a sötét háttérbe építve, világosabb elemekkel */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --outline-color: #8aa9c3;                           /* Világos, de még harmonikus */
-    --primary-color: #050505e8;
-    --primary-color-text:    #ffffff;                   /* Fő szín: kontrasztos, jól olvasható */
-    --primary-color-hover: #a3c1e0;                     /* Hover: egy kicsit világosabb árnyalat */
-    --primary-background-color: #06141B;  
-    --secondory-background-color:#111827;             /* A fő, sötét alapszín háttérként */
-    --secondary-color: #4a72a0;                         /* Másodlagos szín: sötétebb árnyalat */
-    --primary-color-active: #7599b8;                    /* Aktív állapot: köztes fényerő */
-    --background-color-w-opacity: rgba(0, 0, 0, 0);
-    --button-background-color: #0d1f2f;                 /* Gombok: egységes sötétkék háttér */
-    --colorFadeIn: #8aa9c3;
-  }
+  --outline-color: #8aa9c3;                           /* Világos, de még harmonikus */
+  --primary-color: #050505e8;
+  --primary-color-text:    #ffffff;                   /* Fő szín: kontrasztos, jól olvasható */
+  --primary-color-hover: #a3c1e0;                     /* Hover: egy kicsit világosabb árnyalat */
+  --primary-background-color: #06141B;  
+  --secondory-background-color:#111827;             /* A fő, sötét alapszín háttérként */
+  --secondary-color: #4a72a0;                         /* Másodlagos szín: sötétebb árnyalat */
+  --primary-color-active: #7599b8;                    /* Aktív állapot: köztes fényerő */
+  --background-color-w-opacity: rgba(0, 0, 0, 0);
+  --button-background-color: #0d1f2f;                 /* Gombok: egységes sötétkék háttér */
+  --colorFadeIn: #8aa9c3;
 }
 html, body {
   height: 100%;
 }
 
+input, 
+textarea, 
+select {
+  background-color: #2A2A2A;  /* Sötétszürke háttér */
+  color: #FFFFFF;            /* Fehér betűszín */
+  border: 1px solid #444;    /* Halvány szegély */
+  border-radius: 4px;        /* Lekerekített sarok */
+  padding: 8px;
+}
+input::placeholder {
+  color: #999999;            /* Placeholder halványszürke */
+}
+input:focus {
+  outline: none;
+  border-color: #888;        /* Esetleg világosodik a keret */
+}
 #root, .app-container {
   display: flex;
   flex-direction: column;
