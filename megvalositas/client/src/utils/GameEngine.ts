@@ -52,7 +52,6 @@ export class GameEngine {
    * - Továbbállunk a next állapotra (ha van), ellenőrzi a továbblépés feltételét
    */
   public setSelectedAction(actionName: string) {
-    this.selectedAction = actionName;
     if (this.selectionResolver) {
       this.selectionResolver(actionName);
     }
@@ -76,7 +75,6 @@ export class GameEngine {
     ]).finally(() => {
       this.selectionPromise = null;
       this.selectionResolver = null;
-      this.selectedAction = null;
     });
   }
 
