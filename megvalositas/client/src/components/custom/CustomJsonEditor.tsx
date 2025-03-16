@@ -15,6 +15,8 @@ interface GameConfig {
     [key: string]: {
       actions: { name: string; code?: string }[]; // A code nem kötelező
       next: string | null;
+      enableActionSelection?: boolean;
+      choiceTime?: number;
     };
   };
 }
@@ -279,6 +281,41 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                   </button>
                 </div>
 
+                {/* checkbox és a választási idő beállításait */}
+                <div className="mt-2 flex items-center">
+                  <label className="text-xs text-white">
+                    Választandó:
+                    <input
+                      type="checkbox"
+                      className="ml-1"
+                      checked={config.states[stateName].enableActionSelection || false}
+                      onChange={(e) => {
+                        const updatedStates = { ...config.states };
+                        updatedStates[stateName].enableActionSelection = e.target.checked;
+                        onConfigChange({ ...config, states: updatedStates });
+                      }}
+                    />
+                  </label>
+                  {config.states[stateName].enableActionSelection && (
+                    <>
+                      <label className="text-xs text-white ml-2">
+                        Választási idő (mp):
+                      </label>
+                      <input
+                        type="number"
+                        value={config.states[stateName].choiceTime || ""}
+                        onChange={(e) => {
+                          const updatedStates = { ...config.states };
+                          updatedStates[stateName].choiceTime = parseInt(e.target.value, 10);
+                          onConfigChange({ ...config, states: updatedStates });
+                        }}
+                        className="text-xs bg-gray-700 text-white border-none rounded px-1 py-1 w-16 ml-1"
+                        placeholder="pl. 10"
+                      />
+                    </>
+                  )}
+                </div>
+
                 <DroppableContainer stateName={stateName}>
                   <SortableContext items={stateData.actions.map((_, i) => `${stateName}-${i}`)} strategy={verticalListSortingStrategy}>
                   {stateData.actions.length > 0 ? (
@@ -343,7 +380,9 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                 </button>
 
                 {index < arr.length - 1 && (
-                  <div className="text-center text-gray-400 text-xs mt-1">↓ {arr[index + 1][0]} ↓</div>
+                  <div className="text-center text-gray-400 text-xs mt-1">
+                    ↓ {arr[index + 1][0]} ↓
+                  </div>
                 )}
               </div>
             </SortableItem>
