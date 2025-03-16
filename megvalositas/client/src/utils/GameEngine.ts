@@ -6,6 +6,8 @@ export interface GameConfig {
     [key: string]: {
       actions: { name: string; code?: string }[];
       next: string | null;
+      enableActionSelection?: boolean;
+      choiceTime?: number;
     };
   };
 }
@@ -15,9 +17,16 @@ export class GameEngine {
   private config: GameConfig;
 
   // Az éppen aktuális állapot
-  private currentState: string;
+  private currentState: string | null;
   // A history egy tömb, amiben sorban tároljuk, hogy mely állapotokat jártunk be
   private stateHistory: string[] = [];
+
+  // Választott akció és a Promise-mechanizmus a felhasználói döntéshez
+  private selectedAction: string | null = null;
+  private selectionPromise: Promise<string | null> | null = null;
+  private selectionResolver: ((action: string | null) => void) | null = null;
+
+  private isRunning = false;
 
   constructor(config: GameConfig) {
     this.config = config;
@@ -34,7 +43,6 @@ export class GameEngine {
       throw new Error("A konfiguráció nem tartalmaz állapotokat!");
     }
     this.currentState = initialState;
-    // Betesszük a history-be az első állapotot
     this.stateHistory.push(this.currentState);
   }
 
@@ -44,63 +52,123 @@ export class GameEngine {
    * - Lefutnak az abban definiált akciók
    * - Továbbállunk a next állapotra (ha van), ellenőrzi a továbblépés feltételét
    */
-  public runOneStep(): void {
-    if (!this.currentState) {
-      console.log("A játék véget ért.");
-      return;
-    }
-
-    console.log(`Futtatom az állapotot: ${this.currentState}`);
-    const stateMethod = toValidMethodName(this.currentState);
-    if (typeof this.gameInstance[stateMethod] === "function") {
-      this.gameInstance[stateMethod]();
-    } else {
-      console.warn(`Az állapot metódus "${stateMethod}" nem található.`);
-    }
-
-    const stateData = this.config.states[this.currentState];
-    for (const action of stateData.actions) {
-      const actionMethod = toValidMethodName(action.name);
-      console.log(`Futtatom az akciót: ${action.name} (${actionMethod})`);
-      if (typeof this.gameInstance[actionMethod] === "function") {
-        this.gameInstance[actionMethod]();
-      } else {
-        console.warn(`Az akció metódus "${actionMethod}" nem található.`);
-      }
-    }
-
-    // Feltétel ellenőrzése az állapotból való továbblépéshez
-    const conditionMethodName = `${toValidMethodName(this.currentState)}NextCondition`;
-
-    // Ha a metódus létezik a gameInstance-ben, akkor hívjuk meg
-    if (typeof this.gameInstance[conditionMethodName] === "function") {
-      const shouldTransition = this.gameInstance[conditionMethodName]();
-      if (shouldTransition) {
-        this.currentState = stateData.next || "";
-      } else {
-        console.log("A feltétel nem teljesült, maradunk az aktuális állapotban.");
-        return;
-      }
-    } else {
-      this.currentState = stateData.next || "";
-    }
-
-    if (this.currentState) {
-      this.stateHistory.push(this.currentState);
-    } else {
-      console.log("A játék véget ért.");
+  public setSelectedAction(actionName: string) {
+    this.selectedAction = actionName;
+    if (this.selectionResolver) {
+      this.selectionResolver(actionName);
     }
   }
 
   /**
-   * Visszalépés az előző állapotba
+   * Várakozás a felhasználói választásra a megadott timeout ideig.
+   * Ha nem választ a user, null-lal feloldódik, és továbblépünk akció nélkül.
+   */
+  private waitForUserSelection(timeout: number): Promise<string | null> {
+    if (!this.selectionPromise) {
+      this.selectionPromise = new Promise((resolve) => {
+        this.selectionResolver = resolve;
+      });
+    }
+    return Promise.race([
+      this.selectionPromise,
+      new Promise<string | null>((resolve) =>
+        setTimeout(() => resolve(null), timeout)
+      ),
+    ]).finally(() => {
+      this.selectionPromise = null;
+      this.selectionResolver = null;
+      this.selectedAction = null;
+    });
+  }
+
+  /**
+   * A legfontosabb függvény: egy állapot lépés végrehajtása aszinkron.
+   * - Ha dönteni kell akkor megvárja a user választást (vagy a time outot).
+   * - Ha nem kell dönteni akkor lefuttat minden akciót.
+   * - Ezután megnézi, kell-e állapotot váltani (nextCondition).
+   */
+  public async runOneStep(): Promise<void> {
+    if (this.isRunning) {
+      console.warn("runOneStep már fut, megvárjuk amíg befejeződik.");
+      return;
+    }
+    this.isRunning = true;
+
+    try {
+      if (!this.currentState) {
+        console.log("A játék véget ért. Nincs több lépés.");
+        return;
+      }
+
+      console.log(`Futtatom az állapotot: ${this.currentState}`);
+      const stateMethod = toValidMethodName(this.currentState);
+      if (typeof this.gameInstance[stateMethod] === "function") {
+        this.gameInstance[stateMethod]();
+      } else {
+        console.warn(`Az állapot metódus "${stateMethod}" nem található.`);
+      }
+
+      const stateData = this.config.states[this.currentState];
+
+      // Ha dönteni kell akkor várjuk a user akcióját vagy time outot
+      if (stateData.enableActionSelection) {
+        console.log("Választásra váró állapot. Timeout:", stateData.choiceTime ?? 0, "mp");
+        const timeout = stateData.choiceTime ? stateData.choiceTime * 1000 : 0;
+        const chosenAction = await this.waitForUserSelection(timeout);
+
+        if (chosenAction) {
+          console.log(`Felhasználó által kiválasztott akció: ${chosenAction}`);
+          if (typeof this.gameInstance[chosenAction] === "function") {
+            this.gameInstance[chosenAction]();
+          } else {
+            console.warn(`Az akciómetódus "${chosenAction}" nem található a gameInstance-ben.`);
+          }
+        } else {
+          console.log("Nem történt felhasználói választás, továbblépünk akció nélkül.");
+        }
+      } else {
+        // Ha nem decision state, akkor lefuttatjuk az összes akciót
+        for (const action of stateData.actions) {
+          const actionMethod = toValidMethodName(action.name);
+          console.log(`Futtatom az akciót: ${action.name} (${actionMethod})`);
+          if (typeof this.gameInstance[actionMethod] === "function") {
+            this.gameInstance[actionMethod]();
+          } else {
+            console.warn(`Az akció metódus "${actionMethod}" nem található a gameInstance-ben.`);
+          }
+        }
+      }
+
+      // Megnézzük a nextCondition-t: váltunk-e a következő állapotba?
+      const conditionMethodName = toValidMethodName(this.currentState) + "NextCondition";
+      let shouldTransition = true;
+      if (typeof this.gameInstance[conditionMethodName] === "function") {
+        shouldTransition = this.gameInstance[conditionMethodName]();
+      }
+
+      if (shouldTransition) {
+        if (stateData.next === null) {
+          console.log("A játék véget ért (next = null).");
+          this.currentState = null;
+        } else {
+          console.log(`Tovább lépünk a(z) "${stateData.next}" állapotba.`);
+          this.currentState = stateData.next;
+          this.stateHistory.push(this.currentState);
+        }
+      } else {
+        console.log("A nextCondition false, maradunk az aktuális állapotban:", this.currentState);
+      }
+    } finally {
+      this.isRunning = false; // akármi is történt, engedjük a következő runOneStep-et
+    }
+  }
+
+  /**
+   * Manuális visszalépés egy korábbi állapotba
    */
   public goToPreviousState(): void {
-    // Ha legalább 2 állapot van a historyban (a mostani és előtte egy)
     if (this.stateHistory.length > 1) {
-      // Levesszük a legutolsó (aktuális) állapotot
       this.stateHistory.pop();
-      // Az új utolsó lesz az előző állapot
       this.currentState = this.stateHistory[this.stateHistory.length - 1];
       console.log("Visszaléptem az előző állapotra:", this.currentState);
     } else {
@@ -108,22 +176,46 @@ export class GameEngine {
     }
   }
 
-  public getCurrentState(): string {
+  /**
+   * A felhasználó által kiválasztott akció futtatása:
+   * - Ha dönteni kell, akkor valójában csak beállítjuk a selectedAction-t,
+   *   ami feloldja a waitForUserSelection-t.
+   * - Ha nem decision state, akkor azonnal futtatjuk a metódust.
+   */
+  public performAction(actionName: string): void {
+    if (!this.currentState) {
+      console.warn("A játék véget ért, nem futtatunk több akciót.");
+      return;
+    }
+
+    const stateData = this.config.states[this.currentState];
+    if (stateData.enableActionSelection) {
+      this.setSelectedAction(actionName);
+    } else {
+      // Nem kell dönteni, azonnal lefuttatjuk
+      const actionMethod = actionName;
+      if (typeof this.gameInstance[actionMethod] === "function") {
+        console.log(`PerformAction: futtatom az akciót: ${actionMethod}`);
+        this.gameInstance[actionMethod]();
+      } else {
+        console.warn(`Az akció metódus "${actionMethod}" nem található a gameInstance-ben.`);
+      }
+    }
+  }
+
+  /**
+   * Aktuális állapot neve (null, ha vége).
+   */
+  public getCurrentState(): string | null {
     return this.currentState;
   }
 
+  /**
+   * Az aktuális állapot akcióit adja vissza (MethodName formában).
+   */
   public getAvailableActions(): string[] {
     if (!this.currentState) return [];
     const stateData = this.config.states[this.currentState];
-    return stateData.actions.map((action) => toValidMethodName(action.name));
-  }
-
-  public performAction(actionName: string): void {
-    if (typeof this.gameInstance[actionName] === "function") {
-      console.log(`Futtatom az akciót: ${actionName}`);
-      this.gameInstance[actionName]();
-    } else {
-      console.warn(`Az akció metódus "${actionName}" nem található.`);
-    }
+    return stateData.actions.map((a) => toValidMethodName(a.name));
   }
 }
