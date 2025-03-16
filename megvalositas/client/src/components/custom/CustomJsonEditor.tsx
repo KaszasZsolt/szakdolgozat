@@ -1,6 +1,5 @@
-import React from "react";
-import { useState, useEffect } from "react";
-import { DndContext, closestCenter } from "@dnd-kit/core";
+import React, { useState, useEffect } from "react";
+import { DndContext, rectIntersection, DragOverlay, useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -26,11 +25,21 @@ interface CustomJsonEditorProps {
   hideActionNames?: boolean; // Új: Funkciónevek elhagyhatóak
 }
 
+const DroppableContainer: React.FC<{ stateName: string; children: React.ReactNode }> = ({ stateName, children }) => {
+  const { setNodeRef } = useDroppable({ id: `droppable-${stateName}` });
+  return (
+    <div ref={setNodeRef} data-state={stateName}>
+      {children}
+    </div>
+  );
+};
+
 const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigChange, hideActionNames = false }) => {
   const [editedNames, setEditedNames] = useState<{ [key: string]: string }>(
     () => Object.keys(config.states).reduce((acc, key) => ({ ...acc, [key]: key }), {})
   );
   const [hoveredFunction, setHoveredFunction] = useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   useEffect(() => {
     setEditedNames(() =>
@@ -136,17 +145,69 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
     onConfigChange({ ...config, states: updatedStates });
   };
 
-  const handleActionChange = (stateName: string, actionIndex: number, key: "name" | "code", value: string) => {
+  const handleActionChange = (
+    stateName: string,
+    actionIndex: number,
+    key: "name" | "code",
+    value: string
+  ) => {
     const updatedStates = { ...config.states };
     updatedStates[stateName].actions[actionIndex][key] = value;
     onConfigChange({ ...config, states: updatedStates });
   };
 
-  const handleDragEnd = (event: any, type: "state" | "action", stateName?: string) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+  const parseActionId = (id: string) => {
+    const separatorIndex = id.lastIndexOf("-");
+    if (separatorIndex === -1) return { state: id, index: 0 };
+    const state = id.substring(0, separatorIndex);
+    const index = parseInt(id.substring(separatorIndex + 1), 10);
+    return { state, index };
+  };
 
-    if (type === "state") {
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    if (active.id.includes("-")) {
+      setActiveDragId(active.id);
+    }
+  };
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      setActiveDragId(null);
+      return;
+    }
+
+    if (active.id.includes("-")) {
+      const source = parseActionId(active.id);
+      let destinationState = "";
+      if (over.id.startsWith("droppable-")) {
+        destinationState = over.id.replace("droppable-", "");
+      } else if (over.id.includes("-")) {
+        destinationState = parseActionId(over.id).state;
+      }
+      if (!destinationState) return;
+      const sourceActions = [...config.states[source.state].actions];
+      const [movedAction] = sourceActions.splice(source.index, 1);
+
+      if (source.state !== destinationState) {
+        const destinationActions = [...config.states[destinationState].actions];
+        destinationActions.splice(0, 0, movedAction);
+        const updatedStates = { ...config.states };
+        updatedStates[source.state].actions = sourceActions;
+        updatedStates[destinationState].actions = destinationActions;
+        onConfigChange({ ...config, states: updatedStates });
+      } else {
+        const actions = config.states[source.state].actions;
+        const newIndex = actions.findIndex((_, i) => `${source.state}-${i}` === over.id);
+        if (source.index !== newIndex && newIndex !== -1) {
+          const updatedActions = arrayMove(actions, source.index, newIndex);
+          const updatedStates = { ...config.states };
+          updatedStates[source.state].actions = updatedActions;
+          onConfigChange({ ...config, states: updatedStates });
+        }
+      }
+    } else {
       const keys = Object.keys(config.states);
       const oldIndex = keys.indexOf(active.id);
       const newIndex = keys.indexOf(over.id);
@@ -159,19 +220,35 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
           };
           return acc;
         }, {} as { [key: string]: typeof config.states[string] });
-
-        onConfigChange({ ...config, states: updatedStates });
-      }
-    } else if (type === "action" && stateName) {
-      const actions = config.states[stateName].actions;
-      const oldIndex = actions.findIndex((_, i) => `${stateName}-${i}` === active.id);
-      const newIndex = actions.findIndex((_, i) => `${stateName}-${i}` === over.id);
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const updatedStates = { ...config.states };
-        updatedStates[stateName].actions = arrayMove(actions, oldIndex, newIndex);
         onConfigChange({ ...config, states: updatedStates });
       }
     }
+    setActiveDragId(null);
+  };
+
+  // Rendereljük a húzott akciót a DragOverlay-ben
+  const renderActiveAction = () => {
+    if (!activeDragId) return null;
+    const { state, index } = parseActionId(activeDragId);
+    const action = config.states[state]?.actions[index];
+    if (!action) return null;
+    return (
+      <div className="flex gap-1 p-1 bg-gray-600 rounded items-center">
+        {!hideActionNames && (
+          <div className="text-xs bg-gray-700 text-white flex-1 px-1 py-1 rounded w-20">
+            {action.name}
+          </div>
+        )}
+        <div className="text-xs bg-gray-700 text-white flex-1 px-1 py-1 rounded w-28">
+          {action.code || ""}
+        </div>
+        <span className="text-gray-300 text-xs ml-2 italic w-80 truncate">
+          {baseFunctions[
+            (action.code as keyof typeof baseFunctions)
+          ]?.description || "Nincs leírás"}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -180,7 +257,11 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
         + Új állapot
       </button>
 
-      <DndContext collisionDetection={closestCenter} onDragEnd={(event) => handleDragEnd(event, "state")}>
+      <DndContext
+        collisionDetection={rectIntersection}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext items={Object.keys(config.states)} strategy={verticalListSortingStrategy}>
           {Object.entries(config.states).map(([stateName, stateData], index, arr) => (
             <SortableItem key={stateName} id={stateName}>
@@ -198,9 +279,10 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                   </button>
                 </div>
 
-                <DndContext collisionDetection={closestCenter} onDragEnd={(event) => handleDragEnd(event, "action", stateName)}>
+                <DroppableContainer stateName={stateName}>
                   <SortableContext items={stateData.actions.map((_, i) => `${stateName}-${i}`)} strategy={verticalListSortingStrategy}>
-                    {stateData.actions.map((action, index) => (
+                  {stateData.actions.length > 0 ? (
+                    stateData.actions.map((action, index) => (
                       <SortableItem key={`${stateName}-${index}`} id={`${stateName}-${index}`}>
                         <div className="flex gap-1 mb-1 p-1 bg-gray-600 rounded cursor-grab items-center">
                           {/* Akció neve (input mező) */}
@@ -246,10 +328,15 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                           </button>
                         </div>
                       </SortableItem>
-                    ))}
+                    ))
+                  ) : (
+                    <div className="min-h-[60px] text-gray-400 text-xs">
+                      Húzd ide az akciót
+                    </div>
+                  )}
 
                   </SortableContext>
-                </DndContext>
+                </DroppableContainer>
 
                 <button className="mt-1 bg-blue-500 px-2 py-1 text-xs rounded text-white" onClick={() => handleAddAction(stateName)}>
                   + Akció
@@ -262,6 +349,7 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
             </SortableItem>
           ))}
         </SortableContext>
+        <DragOverlay>{renderActiveAction()}</DragOverlay>
       </DndContext>
     </div>
   );
