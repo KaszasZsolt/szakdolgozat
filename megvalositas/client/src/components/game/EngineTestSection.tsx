@@ -11,6 +11,22 @@ const EngineTestSection: React.FC<EngineTestSectionProps> = ({ engine, setEngine
   const [autoRunning, setAutoRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [logs, setLogs] = useState<string[]>([]);
+
+  // Console log a helyi változatba is
+  useEffect(() => {
+    const originalLog = console.log;
+    console.log = (...args: any[]) => {
+      const message = args.map((arg) => String(arg)).join(" ");
+      setLogs((prev) => [...prev, message]);
+      originalLog(...args);
+    };
+
+    return () => {
+      console.log = originalLog;
+    };
+  }, []);
+
   const startAutoTest = () => {
     setAutoRunning(true);
     intervalRef.current = setInterval(() => {
@@ -43,6 +59,11 @@ const EngineTestSection: React.FC<EngineTestSectionProps> = ({ engine, setEngine
     setEngine(newEngine);
   };
 
+  // log törlése
+  const clearLogs = () => {
+    setLogs([]);
+  };
+
   return (
     <div className="mt-4 p-4 bg-gray-800 rounded">
       <h3 className="text-xl font-bold">Futásidejű Teszt</h3>
@@ -63,6 +84,7 @@ const EngineTestSection: React.FC<EngineTestSectionProps> = ({ engine, setEngine
           </li>
         ))}
       </ul>
+
       <div className="flex flex-row items-center mt-4">
         <button
           className="bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded mr-2"
@@ -104,10 +126,28 @@ const EngineTestSection: React.FC<EngineTestSectionProps> = ({ engine, setEngine
         >
           Alaphelyzetbe állítás
         </button>
+
+        {/*Log törlése gomb */}
+        <button
+          className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded ml-2"
+          onClick={clearLogs}
+        >
+          Log törlése
+        </button>
       </div>
+
       <p className="mt-2">
         Kattints valamelyik akcióra, illetve lépj vissza/előre az állapotok között!
       </p>
+
+      {/* Üzeneteket megjelenítő doboz */}
+      <div className="mt-4 bg-gray-700 p-2 rounded max-h-40 overflow-auto">
+        {logs.map((line, idx) => (
+          <div key={idx} className="text-white text-sm whitespace-pre-wrap">
+            {line}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
