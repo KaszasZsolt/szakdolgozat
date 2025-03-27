@@ -1,15 +1,6 @@
 import { toValidMethodName } from "./toValidMethorName";
 import { baseFunctions } from "./baseFunctions";
-
-interface GameConfig {
-  game: string;
-  states: {
-    [key: string]: {
-      actions: { name: string; code?: string }[];
-      next: string | null;
-    };
-  };
-}
+import { GameConfig } from "./GameEngine";
 
 /**
  * Ez a függvény a megadott JSON konfiguráció alapján

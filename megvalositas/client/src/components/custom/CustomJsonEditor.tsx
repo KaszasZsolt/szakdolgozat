@@ -8,18 +8,8 @@ import {
 } from "@dnd-kit/sortable";
 import { baseFunctions } from "../../utils/baseFunctions";
 import { CSS } from "@dnd-kit/utilities";
+import { GameConfig } from "../../utils/GameEngine";
 
-interface GameConfig {
-  game: string;
-  states: {
-    [key: string]: {
-      actions: { name: string; code?: string }[]; // A code nem kötelező
-      next: string | null;
-      enableActionSelection?: boolean;
-      choiceTime?: number;
-    };
-  };
-}
 
 interface CustomJsonEditorProps {
   config: GameConfig;

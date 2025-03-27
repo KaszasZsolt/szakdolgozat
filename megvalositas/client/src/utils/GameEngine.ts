@@ -8,6 +8,7 @@ export interface GameConfig {
       next: string | null;
       enableActionSelection?: boolean;
       choiceTime?: number;
+      previous?: string;
     };
   };
 }
