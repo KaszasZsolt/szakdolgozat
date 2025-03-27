@@ -305,7 +305,30 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                     </>
                   )}
                 </div>
-
+                {/* Új: Visszalépési állapot kiválasztása */}
+                <div className="mt-2 flex items-center">
+                  <label className="text-xs text-white">
+                    Előző állapot:
+                    <select
+                      value={config.states[stateName].previous || ""}
+                      onChange={(e) => {
+                        const updatedStates = { ...config.states };
+                        updatedStates[stateName].previous = e.target.value || null;
+                        onConfigChange({ ...config, states: updatedStates });
+                      }}
+                      className="text-xs bg-gray-700 text-white border-none rounded px-1 py-1 ml-1"
+                    >
+                      <option value="">Nincs</option>
+                      {Object.keys(config.states)
+                        .filter((key) => key !== stateName)
+                        .map((key) => (
+                          <option key={key} value={key}>
+                            {key}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                </div>
                 <DroppableContainer stateName={stateName}>
                   <SortableContext items={stateData.actions.map((_, i) => `${stateName}-${i}`)} strategy={verticalListSortingStrategy}>
                   {stateData.actions.length > 0 ? (

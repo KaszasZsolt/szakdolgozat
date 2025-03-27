@@ -8,7 +8,7 @@ export interface GameConfig {
       next: string | null;
       enableActionSelection?: boolean;
       choiceTime?: number;
-      previous?: string;
+      previous?: string | null;
     };
   };
 }
@@ -154,10 +154,17 @@ export class GameEngine {
           this.stateHistory.push(this.currentState);
         }
       } else {
-        console.log("A nextCondition false, maradunk az aktuális állapotban:", this.currentState);
+        // Ha a nextCondition false, ellenőrizzük, hogy van-e "previous" beállítva
+        if (stateData.previous) {
+          console.log(`Visszalépünk a korábbi állapotra: ${stateData.previous}`);
+          this.currentState = stateData.previous;
+          this.stateHistory.push(this.currentState);
+        } else {
+          console.log("A nextCondition false, de nincs visszalépési állapot beállítva, így maradunk az aktuális állapotban:", this.currentState);
+        }
       }
     } finally {
-      this.isRunning = false; // akármi is történt, engedjük a következő runOneStep-et
+      this.isRunning = false;
     }
   }
 
