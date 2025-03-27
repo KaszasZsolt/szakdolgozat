@@ -6,5 +6,6 @@ export const routesConfig = {
       login: "/login",
       dashboard: "/dashboard",
       gameCreation: "/gamecreationpage",
+      game: "/game", 
     }
   };

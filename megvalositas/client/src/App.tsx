@@ -5,6 +5,7 @@ import Footer from "./components/baseUi/Footer";
 import { routesConfig } from "./config/routesConfig";
 import Dashboard from "./pages/Dashboard";
 import GameCreationPage from "./pages/GameCreationPage";
+import GamePage from "./pages/GamePage";
 
 function App() {
   const currentRoutes =routesConfig.hu;
@@ -18,8 +19,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/gamecreationpage" element={<GameCreationPage />} />
-
         <Route path="*" element={<NotFound />} />
+        <Route path="/game" element={<GamePage />} />
       </Routes>
       <Footer />
     </BrowserRouter>

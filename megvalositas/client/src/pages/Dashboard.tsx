@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserData, fetchGames, createGame, deleteGame, Game } from "../services/dashboardService";
+import { createGameRoom } from "../services/roomService";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -40,7 +41,15 @@ const Dashboard = () => {
       })
       .catch((err: Error) => setError(err.message));
   };
-
+  const [roomCodes, setRoomCodes] = useState<Record<string, string>>({});
+  const handleCreateRoom = async (gameId: string) => {
+    try {
+      const room = await createGameRoom({ gameId });
+      setRoomCodes((prev) => ({ ...prev, [gameId]: room.code }));
+    } catch (error: any) {
+      alert("Hiba a szoba létrehozásakor: " + error.message);
+    }
+  };
   // Játék törlése
   const handleDeleteGame = (game: Game) => {
     const confirmationText = "TÖRÖLNI";
@@ -112,6 +121,18 @@ const Dashboard = () => {
                   <li key={game.id} className="flex items-center justify-between">
                     <span className="text-lg">{getDisplayName(game)}</span>
                     <div className="flex gap-2">
+                      {roomCodes[game.id] && (
+                        <button
+                          onClick={() => navigate(`/game?roomCode=${roomCodes[game.id]}`)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        >
+                          Csatlakozás: {roomCodes[game.id]}
+                        </button>
+                      )}
+
+                      <button onClick={() => handleCreateRoom(game.id)} className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded">
+                        Játékszoba generálása
+                      </button>
                       <button onClick={() => handleEditGame(game)} className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded">
                         Szerkesztés
                       </button>

@@ -6,12 +6,14 @@ import { useTranslation } from "react-i18next";
 import { routesConfig } from "../../config/routesConfig";
 import GameSaveSection from "../game/GameSaveSection";
 import { GameConfig } from "../../utils/GameEngine";
-
+import { useGameSession } from "../../hooks/useGameSession";
 interface NavbarProps {
   previewConfig?: GameConfig | null;
   generatedCode?: string;
   gameId?: string | null;
   setGameId?: (id: string) => void;
+  gameName?: string | null;
+  roomCode?: string | null;
 }
 
 const Navbar: React.FC<NavbarProps> = ({
@@ -26,8 +28,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const currentRoutes = routesConfig[currentLang as 'hu'] || routesConfig.hu;
   const [isOpen, setIsOpen] = useState(false);
   const path = useLocation();
-
-  // Ellenőrizzük, hogy a felhasználó be van-e jelentkezve a token alapján
+  const { gameName, roomCode } = useGameSession();
+  
   const isLoggedIn = Boolean(localStorage.getItem("token"));
 
   useEffect(() => {
@@ -56,13 +58,26 @@ const Navbar: React.FC<NavbarProps> = ({
 
       {/* Asztali mentési gombok: csak sm felett */}
       <div className="hidden sm:flex flex-1 justify-center">
-        {path.pathname === "/gamecreationpage" && previewConfig && (
+        {path.pathname === "/gamecreationpage" && previewConfig ? (
           <GameSaveSection
             previewConfig={previewConfig}
             generatedCode={generatedCode}
             gameId={gameId}
             setGameId={setGameId}
           />
+        ) : (
+          gameName && (
+            <>
+                <div className="flex flex-col items-center">
+                  <div className="text-xl font-semibold text-primary">{gameName}</div>
+                  {roomCode && (
+                    <div className="text-sm font-medium text-gray-500 mt-1">
+                      Szoba kód: {roomCode}
+                    </div>
+                  )}
+                </div>
+            </>
+          )
         )}
       </div>
 

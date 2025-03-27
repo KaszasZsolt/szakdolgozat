@@ -219,7 +219,6 @@ app.post('/games/config', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "A játék neve és konfiguráció kötelező." });
     }
     const [result] = await pool.query('INSERT INTO games (user_id, name, config) VALUES (?, ?, ?)', [userId, name, config]);
-    console.log(result.insertId);
     res.status(201).json({ message: "Játék konfiguráció sikeresen elmentve.", id: result.insertId });
   } catch (err) {
     console.error("Hiba a játék konfiguráció mentésekor:", err);
@@ -282,3 +281,59 @@ if (process.env.NODE_ENV === 'development') {
     console.log(`HTTPS szerver fut a ${PORT}-es porton`);
   });
 }
+
+
+//#region Játék szoba létrehozása és lekérése
+const rooms = {};
+app.post('/rooms', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { gameId } = req.body;
+    if (!gameId) {
+      return res.status(400).json({ message: "A gameId kötelező." });
+    }
+    
+    const [games] = await pool.query('SELECT * FROM games WHERE id = ? AND user_id = ?', [gameId, userId]);
+    if (games.length === 0) {
+      return res.status(404).json({ message: "A játék nem található, vagy nem a felhasználóhoz tartozik." });
+    }
+    
+    const gameConfig = games[0].config; 
+    
+    let code = Math.floor(1000 + Math.random() * 9000).toString();
+    while (rooms[code]) {
+      code = Math.floor(1000 + Math.random() * 9000).toString();
+    }
+    
+    rooms[code] = {
+      userId,
+      gameId,
+      gameConfig,
+      createdAt: new Date()
+    };
+    
+    res.status(201).json({ message: "Szoba létrehozva.", code });
+  } catch (err) {
+    console.error("Hiba a szoba létrehozásakor:", err);
+    res.status(500).json({ message: "Hiba történt a szoba létrehozása során." });
+  }
+});
+
+app.get('/rooms/:code', authenticateToken, (req, res) => {
+  try {
+    const { code } = req.params;
+    const room = rooms[code];
+    if (!room) {
+      return res.status(404).json({ message: "Szoba nem található." });
+    }
+    res.json(room);
+  } catch (err) {
+    console.error("Hiba a szoba lekérésekor:", err);
+    res.status(500).json({ message: "Hiba történt a szoba lekérésekor." });
+  }
+});
+
+
+
+
+//#endregion
