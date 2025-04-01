@@ -1,8 +1,9 @@
 import { fetchWithAuth } from "./apiClient";
 interface AuthResponse {
-    accessToken?: string;
-    message: string;
-  }
+  accessToken?: string;
+  message: string;
+  userId?: string;
+}
   
   /**
    * Bejelentkezés API hívás.

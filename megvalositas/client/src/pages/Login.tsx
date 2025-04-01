@@ -12,6 +12,7 @@ interface LoginFormData {
 interface RegisterFormData extends LoginFormData {
   confirmPassword: string;
 }
+
 const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -42,6 +43,10 @@ const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
         const data = await login(formData.email, formData.password);
         if (data.accessToken) {
           localStorage.setItem("token", data.accessToken);
+          if (data.userId) {
+            localStorage.setItem("userId", data.userId);
+          }
+          localStorage.setItem("email", formData.email);
           navigate("/dashboard");
         }
       } else {

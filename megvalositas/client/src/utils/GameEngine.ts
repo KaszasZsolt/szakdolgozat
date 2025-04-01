@@ -9,6 +9,8 @@ export interface GameConfig {
       enableActionSelection?: boolean;
       choiceTime?: number;
       previous?: string | null;
+      host?: string | null;
+      cyclePlayers?: boolean;
     };
   };
 }
@@ -21,6 +23,9 @@ export class GameEngine {
   private currentState: string | null;
   // A history egy tömb, amiben sorban tároljuk, hogy mely állapotokat jártunk be
   private stateHistory: string[] = [];
+
+  private players: any[] = [];
+  private currentPlayerIndex: number = 0;
 
   // Választott akció és a Promise-mechanizmus a felhasználói döntéshez
   private selectionPromise: Promise<string | null> | null = null;
@@ -46,44 +51,27 @@ export class GameEngine {
     this.stateHistory.push(this.currentState);
   }
 
+  public setPlayers(players: any[]): void {
+    this.players = players;
+    this.currentPlayerIndex = 0;
+  }
+
+  public getCurrentPlayer(): any {
+    return this.players[this.currentPlayerIndex];
+  }
+
+  public nextPlayer(): void {
+    if (this.players.length > 0) {
+      this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+      console.log("Következő játékos:", this.getCurrentPlayer());
+    }
+  }
+
   /**
    * Egylépéses végrehajtás:
    * - Lefut az aktuális állapot metódusa
    * - Lefutnak az abban definiált akciók
    * - Továbbállunk a next állapotra (ha van), ellenőrzi a továbblépés feltételét
-   */
-  public setSelectedAction(actionName: string) {
-    if (this.selectionResolver) {
-      this.selectionResolver(actionName);
-    }
-  }
-
-  /**
-   * Várakozás a felhasználói választásra a megadott timeout ideig.
-   * Ha nem választ a user, null-lal feloldódik, és továbblépünk akció nélkül.
-   */
-  private waitForUserSelection(timeout: number): Promise<string | null> {
-    if (!this.selectionPromise) {
-      this.selectionPromise = new Promise((resolve) => {
-        this.selectionResolver = resolve;
-      });
-    }
-    return Promise.race([
-      this.selectionPromise,
-      new Promise<string | null>((resolve) =>
-        setTimeout(() => resolve(null), timeout)
-      ),
-    ]).finally(() => {
-      this.selectionPromise = null;
-      this.selectionResolver = null;
-    });
-  }
-
-  /**
-   * A legfontosabb függvény: egy állapot lépés végrehajtása aszinkron.
-   * - Ha dönteni kell akkor megvárja a user választást (vagy a time outot).
-   * - Ha nem kell dönteni akkor lefuttat minden akciót.
-   * - Ezután megnézi, kell-e állapotot váltani (nextCondition).
    */
   public async runOneStep(): Promise<void> {
     if (this.isRunning) {
@@ -135,6 +123,10 @@ export class GameEngine {
             console.warn(`Az akció metódus "${actionMethod}" nem található a gameInstance-ben.`);
           }
         }
+      }
+
+      if (stateData.cyclePlayers) {
+        this.nextPlayer();
       }
 
       // Megnézzük a nextCondition-t: váltunk-e a következő állapotba?
@@ -222,5 +214,31 @@ export class GameEngine {
     if (!this.currentState) return [];
     const stateData = this.config.states[this.currentState];
     return stateData.actions.map((a) => toValidMethodName(a.name));
+  }
+
+  private waitForUserSelection(timeout: number): Promise<string | null> {
+    if (!this.selectionPromise) {
+      this.selectionPromise = new Promise((resolve) => {
+        this.selectionResolver = resolve;
+      });
+    }
+    return Promise.race([
+      this.selectionPromise,
+      new Promise<string | null>((resolve) =>
+        setTimeout(() => resolve(null), timeout)
+      ),
+    ]).finally(() => {
+      this.selectionPromise = null;
+      this.selectionResolver = null;
+    });
+  }
+
+  /**
+   * Beállítja a felhasználó által választott akciót.
+   */
+  public setSelectedAction(actionName: string) {
+    if (this.selectionResolver) {
+      this.selectionResolver(actionName);
+    }
   }
 }

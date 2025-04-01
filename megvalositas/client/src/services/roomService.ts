@@ -12,8 +12,7 @@ export async function createGameRoom(data: { gameId: string }): Promise<{ code: 
   return res.json();
 }
 
-export async function joinGameRoom(code: string): Promise<{ gameConfig
-    : string;}> {
+export async function joinGameRoom(code: string): Promise<{ gameConfig: string; host: string; players: any[] }> {
   const res = await fetchWithAuth(`/rooms/${code}`, {
     method: "GET",
   });

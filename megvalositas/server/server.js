@@ -110,17 +110,22 @@ app.post('/login', async (req, res) => {
     // A refresh token-t HTTPOnly cookie-ként küldjük vissza
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS esetén igaz
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 nap
     });
-    
-    return res.json({ message: "Sikeres bejelentkezés.", accessToken });
+    console.log('Refresh toke',user.id)
+    return res.json({ 
+      message: "Sikeres bejelentkezés.", 
+      accessToken,
+      userId: user.id 
+    });
   } catch (error) {
     console.error("Bejelentkezési hiba:", error);
     res.status(500).json({ message: "Valami hiba történt a bejelentkezés során." });
   }
 });
+
 
 // Hitelesítő middleware a token ellenőrzéséhez
 function authenticateToken(req, res, next) {
@@ -268,18 +273,12 @@ let serverInstance;
 
 if (process.env.NODE_ENV === 'development') {
   serverInstance = http.createServer(app);
-  serverInstance.listen(PORT, () => {
-    console.log(`HTTP szerver fut a ${PORT}-es porton`);
-  });
 } else {
   const httpsOptions = {
     key: fs.readFileSync('/home/ubuntu/kartyajatek/megvalositas/server/ssl/privkey.pem'),
     cert: fs.readFileSync('/home/ubuntu/kartyajatek/megvalositas/server/ssl/fullchain.pem')
   };
   serverInstance = https.createServer(httpsOptions, app);
-  serverInstance.listen(PORT, '0.0.0.0', () => {
-    console.log(`HTTPS szerver fut a ${PORT}-es porton`);
-  });
 }
 
 
@@ -306,10 +305,11 @@ app.post('/rooms', authenticateToken, async (req, res) => {
     }
     
     rooms[code] = {
-      userId,
+      host: userId,
       gameId,
       gameConfig,
-      createdAt: new Date()
+      createdAt: new Date(),
+      players: [] 
     };
     
     res.status(201).json({ message: "Szoba létrehozva.", code });
@@ -335,5 +335,63 @@ app.get('/rooms/:code', authenticateToken, (req, res) => {
 
 
 
+const io = require("socket.io")(serverInstance, {
+  cors: {
+    origin: process.env.NODE_ENV === 'development'
+      ? "http://localhost:5173"
+      : "https://kartyajatek.soon.it",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+
+function playersListForRoom(roomCode) {
+  return rooms[roomCode] ? rooms[roomCode].players : [];
+}
+
+io.on("connection", (socket) => {
+  socket.on("joinRoom", ({ roomCode, user }) => {
+    console.log("asd")
+    if (!rooms[roomCode]) {
+      return socket.emit("roomNotFound");
+    }
+    socket.roomCode = roomCode;
+    socket.user = user;
+
+    rooms[roomCode].players.push(user);
+    console.log(rooms[roomCode].players)
+    socket.join(roomCode);
+
+    io.to(roomCode).emit("updatePlayers", playersListForRoom(roomCode));
+  });
+
+  socket.on("leaveRoom", ({ roomCode, user }) => {
+    if (rooms[roomCode]) {
+      rooms[roomCode].players = rooms[roomCode].players.filter(
+        (u) => u.id !== user.id
+      );
+      socket.leave(roomCode);
+      io.to(roomCode).emit("updatePlayers", playersListForRoom(roomCode));
+    }
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.roomCode && socket.user) {
+      if (rooms[socket.roomCode]) {
+        rooms[socket.roomCode].players = rooms[socket.roomCode].players.filter(
+          (u) => u.email !== socket.user.email
+        );
+        io.to(socket.roomCode).emit("updatePlayers", playersListForRoom(socket.roomCode));
+      }
+    }
+  });
+});
+
 
 //#endregion
+
+
+serverInstance.listen(PORT, '0.0.0.0', () => {
+  console.log(`HTTPS szerver fut a ${PORT}-es porton`);
+});
