@@ -8,9 +8,9 @@ import { useGameSession } from "../hooks/useGameSession";
 import { io } from "socket.io-client";
 import { SelectionPanel } from "../components/gameUi/SelectionPanelProps";
 import { GameEngineClient } from "../utils/GameEngineClient";
-
+import { API_BASE_URL } from "../config/config";
 // Socket kapcsolat létrehozása
-const socket = io("http://localhost:31112", { withCredentials: true });
+const socket = io(API_BASE_URL, { withCredentials: true });
 
 const GamePage: React.FC = () => {
   const [searchParams] = useSearchParams();
