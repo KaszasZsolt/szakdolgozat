@@ -23,8 +23,9 @@ export function generateGameClassFromConfig(config: GameConfig): string {
 /**
  * Generált játékosztály.
  */
-class ${className} {
+class ${className} extends GeneratedGameBase {
   constructor() {
+    super();
     console.log("A(z) ${config.game} játék példánya létrejött.");
   }
 
@@ -57,8 +58,8 @@ class ${className} {
 
     for (const action of stateData.actions) {
       const methodName = toValidMethodName(action.name);
-      const actionCall = action.code && usedBaseFunctions.has(action.code as keyof typeof baseFunctions)  
-        ? `this.${action.code}();` 
+      const actionCall = action.code && usedBaseFunctions.has(action.code as keyof typeof baseFunctions)
+        ? `this.${action.code}();`
         : "";
 
       code += `

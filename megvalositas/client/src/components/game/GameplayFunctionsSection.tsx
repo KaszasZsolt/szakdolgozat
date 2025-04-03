@@ -1,6 +1,6 @@
 import React from "react";
 import GeneratedGameClassSection from "./GeneratedGameClassSection";
-import CompileAndLoadButton from "./CompileAndLoadButton";
+import { transpileInBrowser } from "../../utils/transpile";
 import { GameEngine, GameConfig } from "../../utils/GameEngine";
 
 interface GameplayFunctionsSectionProps {
@@ -16,18 +16,28 @@ const GameplayFunctionsSection: React.FC<GameplayFunctionsSectionProps> = ({
   setGeneratedCode,
   setEngine,
 }) => {
-  const handleStartGame = () => {
-    if (previewConfig) {
-      try {
-        const engineInstance = new GameEngine(previewConfig);
-        setEngine(engineInstance);
-        alert("Játék sikeresen betöltve és elindítva!");
-      } catch (err: unknown) {
-        console.error("Hiba a játék indításakor:", err);
-        alert("Hiba történt a játék indítása során!");
-      }
-    } else {
+  const handleStartGame = async () => {
+    if (!previewConfig) {
       alert("Először generálja a konfigurációt!");
+      return;
+    }
+    try {
+      (window as any).GameEngine = GameEngine;
+      const jsCode = await transpileInBrowser(generatedCode);
+      eval(jsCode);
+
+      const className = previewConfig.game.replace(/\s+/g, "");
+      if (!(window as any)[className]) {
+        throw new Error(`A ${className} osztály nem regisztrálódott a globális scope-ban.`);
+      }
+
+      const engineInstance = new GameEngine(previewConfig);
+      setEngine(engineInstance);
+      alert("Sikeres fordítás, betöltés és játék indítása!");
+      engineInstance.startGame();
+    } catch (err: unknown) {
+      console.error("Hiba a játék indításakor:", err);
+      alert("Hiba történt a játék indítása során: " + (err instanceof Error ? err.message : err));
     }
   };
 
@@ -42,26 +52,12 @@ const GameplayFunctionsSection: React.FC<GameplayFunctionsSectionProps> = ({
           onCodeChange={setGeneratedCode}
           initialCode={generatedCode}
         />
-
-        <CompileAndLoadButton
-          tsCode={generatedCode}
-          className={previewConfig ? previewConfig.game.replace(/\s+/g, "") : ""}
-          onSuccess={() => {
-            if (previewConfig) {
-              const className = previewConfig.game.replace(/\s+/g, "");
-              if (!(window as any)[className]) {
-                alert("A generált osztály még mindig nem található a window objektumban.");
-              }
-            }
-          }}
-        />
-
         <div className="mt-4">
           <button
             className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
             onClick={handleStartGame}
           >
-            Játék indítása
+            Játék tesztelése
           </button>
         </div>
       </div>

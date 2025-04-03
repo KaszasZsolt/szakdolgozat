@@ -3,13 +3,31 @@ import Editor from "@monaco-editor/react";
 import { generateGameClassFromConfig } from "../../utils/generateGameClass";
 import { GameConfig } from "../../utils/GameEngine";
 
+const generatedGameBaseDts = `
+/**
+ * A GeneratedGameBase osztály, amely az általános funkciókat tartalmazza.
+ */
+declare class GeneratedGameBase {
+  /**
+   * A játékot a következő játékosra lépteti a megadott irányban.
+   * @param direction Az irány, amelyben a következő játékosra lépünk. Alapértelmezett: 'forward'.
+   */
+  nextPlayer(direction?: 'forward' | 'backward'): void;
+}
+`;
+
+
 interface GeneratedGameClassSectionProps {
   previewConfig: GameConfig | null;
   onCodeChange?: (code: string) => void; // Callback, ha a szülő szeretné visszakapni a módosított kódot
   initialCode?: string;
 }
 
-const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({ previewConfig, onCodeChange, initialCode = "" }) => {
+const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
+  previewConfig,
+  onCodeChange,
+  initialCode = ""
+}) => {
   const [generatedCode, setGeneratedCode] = useState<string>(initialCode);
 
   // Ha nincs initialCode, és a felhasználó rákattint a "Kód generálása" gombra,
@@ -32,6 +50,13 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({ p
     setGeneratedCode(initialCode);
   }, [initialCode]);
 
+  const handleEditorWillMount = (monaco: any) => {
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+      generatedGameBaseDts,
+      "ts:filename/GeneratedGameBase.d.ts"
+    );
+  };
+
   return (
     <section className="mb-8 border p-4 rounded border-gray-700">
       <div className="flex justify-between items-center">
@@ -45,26 +70,27 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({ p
       </div>
       {generatedCode ? (
         <div className="mt-4">
-           <Editor
-              height="300px"
-              theme="vs-dark"
-              defaultLanguage="typescript"
-              value={generatedCode}
-              onChange={(value) => {
-                const newCode = value || "";
-                setGeneratedCode(newCode);
-                if (onCodeChange) {
-                  onCodeChange(newCode);
-                }
-              }}
-              options={{
-                readOnly: false, // szerkeszthető
-                minimap: { enabled: false },
-                wordWrap: "on",
-                tabSize: 2,
-                fontSize: 14,
-              }}
-            />
+          <Editor
+            beforeMount={handleEditorWillMount}
+            height="300px"
+            theme="vs-dark"
+            defaultLanguage="typescript"
+            value={generatedCode}
+            onChange={(value) => {
+              const newCode = value || "";
+              setGeneratedCode(newCode);
+              if (onCodeChange) {
+                onCodeChange(newCode);
+              }
+            }}
+            options={{
+              readOnly: false,
+              minimap: { enabled: false },
+              wordWrap: "on",
+              tabSize: 2,
+              fontSize: 14,
+            }}
+          />
         </div>
       ) : (
         <p className="mt-4">

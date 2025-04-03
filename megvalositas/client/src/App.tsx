@@ -6,6 +6,11 @@ import { routesConfig } from "./config/routesConfig";
 import Dashboard from "./pages/Dashboard";
 import GameCreationPage from "./pages/GameCreationPage";
 import GamePage from "./pages/GamePage";
+import { GameEngine } from "./utils/GameEngine";
+import { GeneratedGameBase } from "./utils/GeneratedGameBase";
+
+(window as any).GameEngine = GameEngine;
+(window as any).GeneratedGameBase = GeneratedGameBase;
 
 function App() {
   const currentRoutes =routesConfig.hu;

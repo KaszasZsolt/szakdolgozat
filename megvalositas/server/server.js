@@ -332,9 +332,13 @@ app.get('/rooms/:code', authenticateToken, (req, res) => {
     res.status(500).json({ message: "Hiba történt a szoba lekérésekor." });
   }
 });
+function playersListForRoom(roomCode) {
+  return rooms[roomCode] ? rooms[roomCode].players : [];
+}
+//#endregion Játék szoba létrehozása és lekérése
 
 
-
+//#region  io connection
 const io = require("socket.io")(serverInstance, {
   cors: {
     origin: process.env.NODE_ENV === 'development'
@@ -346,41 +350,61 @@ const io = require("socket.io")(serverInstance, {
 });
 
 
-function playersListForRoom(roomCode) {
-  return rooms[roomCode] ? rooms[roomCode].players : [];
-}
+
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", ({ roomCode, user }) => {
-    console.log("asd")
     if (!rooms[roomCode]) {
       return socket.emit("roomNotFound");
     }
     socket.roomCode = roomCode;
     socket.user = user;
+    const roomPlayers = rooms[roomCode].players;
+    const userExists = roomPlayers.some((u) => u.id === user.id);
+    if (!userExists) {
+      roomPlayers.push(user);
+    }
 
-    rooms[roomCode].players.push(user);
-    console.log(rooms[roomCode].players)
+
     socket.join(roomCode);
-
     io.to(roomCode).emit("updatePlayers", playersListForRoom(roomCode));
   });
 
-  socket.on("leaveRoom", ({ roomCode, user }) => {
-    if (rooms[roomCode]) {
-      rooms[roomCode].players = rooms[roomCode].players.filter(
-        (u) => u.id !== user.id
-      );
-      socket.leave(roomCode);
-      io.to(roomCode).emit("updatePlayers", playersListForRoom(roomCode));
+  socket.on("startGame", ({ roomCode }) => {
+    if (!rooms[roomCode]) {
+      return socket.emit("error", { message: "A szoba nem található." });
     }
+    if (rooms[roomCode].host !== socket.user.id) {
+      return socket.emit("error", { message: "Csak a host indíthatja a játékot." });
+    }
+    io.to(roomCode).emit("gameStarted", { message: "A játék elindult!" });
   });
 
+  socket.on("actionSelected", (data) => {
+    socket.to(socket.roomCode).emit("actionSelected", data);
+  });
+
+  socket.on("actionExecuted", (data) => {
+    socket.to(socket.roomCode).emit("actionExecuted", data);
+  });
+
+  socket.on("stepCompleted", (data) => {
+    socket.to(socket.roomCode).emit("stepCompleted", data);
+  });
+
+  socket.on("log", (message) => {
+    socket.to(socket.roomCode).emit("log", message);
+  });
+
+  socket.on("awaitSelection", (data) => {
+    socket.in(socket.roomCode).emit("awaitSelection", data);
+  });
+  
   socket.on("disconnect", () => {
     if (socket.roomCode && socket.user) {
       if (rooms[socket.roomCode]) {
         rooms[socket.roomCode].players = rooms[socket.roomCode].players.filter(
-          (u) => u.email !== socket.user.email
+          (u) => u.id !== socket.user.id
         );
         io.to(socket.roomCode).emit("updatePlayers", playersListForRoom(socket.roomCode));
       }
@@ -389,7 +413,7 @@ io.on("connection", (socket) => {
 });
 
 
-//#endregion
+//#endregion io connection
 
 
 serverInstance.listen(PORT, '0.0.0.0', () => {
