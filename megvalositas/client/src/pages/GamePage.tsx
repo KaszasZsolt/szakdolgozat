@@ -9,6 +9,7 @@ import { io } from "socket.io-client";
 import { SelectionPanel } from "../components/gameUi/SelectionPanelProps";
 import { GameEngineClient } from "../utils/GameEngineClient";
 import { API_BASE_URL } from "../config/config";
+
 // Socket kapcsolat létrehozása
 const socket = io(API_BASE_URL, { withCredentials: true });
 

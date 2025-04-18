@@ -13,6 +13,26 @@ declare class GeneratedGameBase {
    * @param direction Az irány, amelyben a következő játékosra lépünk. Alapértelmezett: 'forward'.
    */
   nextPlayer(direction?: 'forward' | 'backward'): void;
+
+  /**
+   * Beállítja a használandó kártyapaklit.
+   * Lehet előre definiált típus ('magyarkártya', 'pókerkártya') vagy egyéni kártyaobjektum tömb.
+   * 
+   * @param deck A választott pakli típusa vagy egyéni kártyák tömbje.
+   * @example
+   * // Előre definiált pakli: magyar kártya
+   * game.setDeckType('magyarkártya');
+   * 
+   * // Előre definiált pakli: pókerkártya
+   * game.setDeckType('pókerkártya');
+   * 
+   * // Egyéni pakli
+   * game.setDeckType([
+   *   { suit: 'fancy', rank: 'dragon' },
+   *   { suit: 'fancy', rank: 'phoenix' }
+   * ]);
+   */
+  setDeckType(deck: 'magyarkártya' | 'pókerkártya' | { suit: string; rank: string }[]): void;
 }
 `;
 

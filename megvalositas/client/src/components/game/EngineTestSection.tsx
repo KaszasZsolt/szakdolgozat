@@ -66,7 +66,7 @@ const EngineTestSection: React.FC<EngineTestSectionProps> = ({ engine, setEngine
 
   return (
     <div className="mt-4 p-4 bg-gray-800 rounded">
-      <h3 className="text-xl font-bold">Futásidejű Teszt</h3>
+      <h3 className="text-xl font-bold">Játék tesztelése</h3>
       <p>Aktuális állapot: {engine.getCurrentState()}</p>
       <p>Elérhető akciók:</p>
       <ul className="list-disc list-inside">

@@ -1,4 +1,8 @@
 import { toValidMethodName } from "./toValidMethorName";
+export interface CardData {
+  suit: string;
+  rank: string;
+}
 
 export interface GameConfig {
   game: string;
@@ -24,6 +28,7 @@ export class GameEngine {
   private stateHistory: string[] = [];
 
   private players: any[] = [];
+  private deck: CardData[] = [];
   private currentPlayerIndex: number = 0;
 
   // Választott akció és a Promise-mechanizmus a felhasználói döntéshez
@@ -47,12 +52,12 @@ export class GameEngine {
     }
     
     const className = config.game.replace(/\s+/g, "");
-  if ((window as any)[className]) {
-    this.gameInstance = new (window as any)[className]();
-    this.gameInstance.setEngine(this);
-  } else {
-    throw new Error("A generált játékosztály nem található.");
-  }
+    if ((window as any)[className]) {
+      this.gameInstance = new (window as any)[className]();
+      this.gameInstance.setEngine(this);
+    } else {
+      throw new Error("A generált játékosztály nem található.");
+    }
 
     const initialState = Object.keys(config.states)[0];
     if (!initialState) {
@@ -66,6 +71,7 @@ export class GameEngine {
   // Logolás – minden fontos üzenetet itt rögzítünk, majd emitálunk "log" eseményt
   private log(message: string): void {
     this.logs.push(message);
+    console.log(message);
     if (this.socket) {
       this.socket.emit("log", message);
     }
@@ -154,8 +160,6 @@ export class GameEngine {
     return this.currentState === null;
   }
   public nextPlayer(direction: 'forward' | 'backward' = 'forward'): void {
-    
-    console.log('gdb621','forward' );
     if (this.players.length === 0) return;
     if (direction === 'forward') {
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
@@ -372,5 +376,10 @@ export class GameEngine {
         this.socket.emit("actionSelected", { action: actionName, player: this.getCurrentPlayer() });
       }
     }
+  }
+
+  public setDeck(deck: CardData[]): void {
+    this.deck = [...deck];
+    this.log(`Pakli beállítva:${JSON.stringify(this.deck)}`);
   }
 }
