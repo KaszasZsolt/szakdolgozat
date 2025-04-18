@@ -379,25 +379,33 @@ io.on("connection", (socket) => {
     }
     io.to(roomCode).emit("gameStarted", { message: "A játék elindult!" });
   });
+  socket.on("resetGame", ({ roomCode }) => {
+    if (!rooms[roomCode]) return;
+    if (rooms[roomCode].host !== socket.user.id) {
+      
+      return socket.emit("error", { message: "Csak a host indíthat új játékot." });
+    }
+    io.to(roomCode).emit("resetGame"); 
+  });
 
   socket.on("actionSelected", (data) => {
-    socket.to(socket.roomCode).emit("actionSelected", data);
+    io.to(socket.roomCode).emit("actionSelected", data);
   });
 
   socket.on("actionExecuted", (data) => {
-    socket.to(socket.roomCode).emit("actionExecuted", data);
+    io.to(socket.roomCode).emit("actionExecuted", data);
   });
 
   socket.on("stepCompleted", (data) => {
-    socket.to(socket.roomCode).emit("stepCompleted", data);
+    io.to(socket.roomCode).emit("stepCompleted", data);
   });
 
   socket.on("log", (message) => {
-    socket.to(socket.roomCode).emit("log", message);
+    io.to(socket.roomCode).emit("log", message);
   });
 
   socket.on("awaitSelection", (data) => {
-    socket.in(socket.roomCode).emit("awaitSelection", data);
+    io.to(socket.roomCode).emit("awaitSelection", data);
   });
   
   socket.on("disconnect", () => {

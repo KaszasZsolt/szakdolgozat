@@ -68,7 +68,6 @@ export class GameEngine {
     this.logs.push(message);
     if (this.socket) {
       this.socket.emit("log", message);
-      this.emit("log", message);
     }
   }
 
@@ -88,6 +87,15 @@ export class GameEngine {
     // A kliens által indított start esemény visszajelzése is feldolgozható
     this.socket.on("startGame", (data: any) => {
       this.log("Start game event received: " + JSON.stringify(data));
+    });
+
+    this.socket.on("actionSelected", (data: any) => {
+      if (this.selectionResolver &&
+          data?.player?.id === this.getCurrentPlayer()?.id) {
+  
+        this.log(`ACTION SELECTED from remote: ${data?.action}`);
+        this.selectionResolver(data?.action);   // <-- feloldjuk a promise‑t
+      }
     });
   }
 
@@ -110,7 +118,6 @@ export class GameEngine {
     }
     if (this.socket && event === "stateChanged") {
       this.socket.emit("stateChanged", { state: args[0] });
-      this.emit("stateChanged", { state: args[0] });
     }
   }
 
@@ -127,6 +134,25 @@ export class GameEngine {
     return this.players;
   }
 
+  public resetGame(): void {
+    this.currentState = Object.keys(this.config.states)[0] || null;
+    this.stateHistory = this.currentState ? [this.currentState] : [];
+    this.currentPlayerIndex = 0;
+    this.selectionPromise = null;
+    this.selectionResolver = null;
+    this.log("A játékot újraindítottuk.");
+  
+    if (this.socket) {
+      this.socket.emit("gameReset", { message: "A játékot újraindították." });
+    }
+  
+    if (this.currentState) {
+      this.runOneStep();
+    }
+  }
+  public isGameFinished(): boolean {
+    return this.currentState === null;
+  }
   public nextPlayer(direction: 'forward' | 'backward' = 'forward'): void {
     
     console.log('gdb621','forward' );
@@ -139,7 +165,6 @@ export class GameEngine {
     this.log("Következő játékos: " + JSON.stringify(this.getCurrentPlayer()));
     if (this.socket) {
       this.socket.emit("playerChanged", { currentPlayer: this.getCurrentPlayer() });
-      this.emit("playerChanged", { currentPlayer: this.getCurrentPlayer() });
     }
     this.log("Másik játékosra váltottunk")
   }
@@ -180,7 +205,6 @@ export class GameEngine {
           this.log(`Felhasználó által kiválasztott akció: ${chosenAction}`);
           if (this.socket) {
             this.socket.emit("actionSelected", { action: chosenAction, player: this.getCurrentPlayer() });
-            this.emit("actionSelected", { action: chosenAction, player: this.getCurrentPlayer() });
           }
           if (typeof this.gameInstance[chosenAction] === "function") {
             this.gameInstance[chosenAction]();
@@ -199,7 +223,6 @@ export class GameEngine {
             this.gameInstance[actionMethod]();
             if (this.socket) {
               this.socket.emit("actionExecuted", { action: action.name, player: this.getCurrentPlayer() });
-              this.emit("actionExecuted", { action: action.name, player: this.getCurrentPlayer() });
             }
           } else {
             this.log(`Az akció metódus "${actionMethod}" nem található a gameInstance-ben.`);
@@ -240,7 +263,6 @@ export class GameEngine {
       
       if (this.socket) {
         this.socket.emit("stepCompleted", { currentState: this.currentState });
-        this.emit("stepCompleted", { currentState: this.currentState });
       }
     } finally {
       this.isRunning = false;
@@ -250,7 +272,6 @@ export class GameEngine {
     this.log("Játék indítása...");
     if (this.socket) {
       this.socket.emit("gameStarted", { message: "A játék elindult!" });
-      this.emit("gameStarted", { message: "A játék elindult!" });
     }
     this.runOneStep();
   }
@@ -309,34 +330,33 @@ export class GameEngine {
     return stateData.actions.map((a) => toValidMethodName(a.name));
   }
 
-  private waitForUserSelection(timeout: number): Promise<string | null> {
+  private waitForUserSelection(timeoutMs: number): Promise<string | null> {
     const availableActions = this.getAvailableActions();
-    const data = {
-      player: this.getCurrentPlayer(),
-      availableActions: availableActions
-    };
+    const data = { player: this.getCurrentPlayer(), availableActions };
   
-    if (this.socket) {
-      this.socket.emit("awaitSelection", data);
-    }
+    this.socket?.emit("awaitSelection", data);
+    if (this.selectionPromise) return this.selectionPromise;
   
-    if (!this.selectionPromise) {
-      this.selectionPromise = new Promise((resolve) => {
-        this.selectionResolver = resolve;
-      });
-    }
-    return Promise.race([
-      this.selectionPromise,
-      new Promise<string | null>((resolve) =>
-        setTimeout(() => {
-          this.log("A választási idő lejárt, automatikusan továbblépünk.");
-          resolve(null);
-        }, timeout)
-      ),
-    ]).finally(() => {
-      this.selectionPromise = null;
-      this.selectionResolver = null;
+    this.selectionPromise = new Promise<string | null>((resolve) => {
+      const timer = setTimeout(() => {
+        this.log("A választási idő lejárt, automatikusan továbblépünk.");
+        cleanup();
+        resolve(null);
+      }, timeoutMs);
+  
+      this.selectionResolver = (action: string | null) => {
+        clearTimeout(timer);          // <‑‑ itt töröljük a timeoutot
+        cleanup();
+        resolve(action);
+      };
+  
+      const cleanup = () => {
+        this.selectionPromise = null;
+        this.selectionResolver = null;
+      };
     });
+  
+    return this.selectionPromise;
   }
   
   
@@ -350,7 +370,6 @@ export class GameEngine {
       this.selectionResolver(actionName);
       if (this.socket) {
         this.socket.emit("actionSelected", { action: actionName, player: this.getCurrentPlayer() });
-        this.emit("actionSelected", { action: actionName, player: this.getCurrentPlayer() });
       }
     }
   }

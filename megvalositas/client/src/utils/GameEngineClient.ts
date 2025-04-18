@@ -29,6 +29,9 @@ export class GameEngineClient {
     this.socket.on("awaitSelection", (data: any) => {
       this.emit("awaitSelection", data);
     });
+    this.socket.on("resetGame", (data: any) => {
+      this.emit("resetGame", data);
+    })
   }
 
   // callback-ek adott eseményekre

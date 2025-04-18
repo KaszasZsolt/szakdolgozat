@@ -45,7 +45,6 @@ const GamePage: React.FC = () => {
       const parsed = typeof roomData.gameConfig === "string"
         ? JSON.parse(roomData.gameConfig)
         : roomData.gameConfig;
-
       if (!parsed?.config || !parsed?.code) {
         throw new Error("A szoba konfigurációja hibás.");
       }
@@ -92,8 +91,6 @@ const GamePage: React.FC = () => {
 
     const handleAwaitSelection = (data: any) => {
       const currentUserId = localStorage.getItem("userId");
-      console.log("awaitSelection:", data.player.id, currentUserId);
-      // Ha a választás a jelenlegi játékoshoz tartozik, állítsd be a választási lehetőségeket
       if (data.player.id === currentUserId) {
         setAvailableActions(data.availableActions || []);
         setAwaitingPlayer(data.player);
@@ -110,11 +107,22 @@ const GamePage: React.FC = () => {
     };
   }, [clientEngine]);
 
+  useEffect(() => {
+    if (!clientEngine) return;
+    clientEngine.on("resetGame", () => {
+      loadGameFromRoom(triedRoomCode || "");
+    });
+  });
 
   useEffect(() => {
     setShowStartButton(isHost && engine && !engine.isGameStarted());
   }, [isHost, engine]);
 
+  const handleRestart = () => {
+    if (!isHost || !engine) return;
+      socket.emit("resetGame", { roomCode: triedRoomCode });
+      loadGameFromRoom(triedRoomCode || "");
+  };
 
   useEffect(() => {
     if (triedRoomCode) {
@@ -307,6 +315,13 @@ const GamePage: React.FC = () => {
             setAwaitingPlayer(null);
           }}
         />
+      )}
+      {isHost && engine?.isGameFinished() && (
+        <button
+          onClick={handleRestart}
+          className="mt-4 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded">
+          Új játék indítása
+        </button>
       )}
     </div>
   );
