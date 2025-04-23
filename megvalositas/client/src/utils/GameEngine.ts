@@ -50,7 +50,7 @@ export class GameEngine {
       this.socket = socket;
       this.initializeSocketEvents();
     }
-    
+
     const className = config.game.replace(/\s+/g, "");
     if ((window as any)[className]) {
       this.gameInstance = new (window as any)[className]();
@@ -97,8 +97,8 @@ export class GameEngine {
 
     this.socket.on("actionSelected", (data: any) => {
       if (this.selectionResolver &&
-          data?.player?.id === this.getCurrentPlayer()?.id) {
-  
+        data?.player?.id === this.getCurrentPlayer()?.id) {
+
         this.log(`ACTION SELECTED from remote: ${data?.action}`);
         this.selectionResolver(data?.action);   // <-- feloldjuk a promise‑t
       }
@@ -127,10 +127,6 @@ export class GameEngine {
     }
   }
 
-  public setPlayers(players: any[]): void {
-    this.players = players;
-    this.currentPlayerIndex = 0;
-  }
 
   public getCurrentPlayer(): any {
     return this.players[this.currentPlayerIndex];
@@ -147,11 +143,11 @@ export class GameEngine {
     this.selectionPromise = null;
     this.selectionResolver = null;
     this.log("A játékot újraindítottuk.");
-  
+
     if (this.socket) {
       this.socket.emit("gameReset", { message: "A játékot újraindították." });
     }
-  
+
     if (this.currentState) {
       this.runOneStep();
     }
@@ -172,7 +168,7 @@ export class GameEngine {
     }
     this.log("Másik játékosra váltottunk")
   }
-  
+
   /**
    * A játék egy lépésének végrehajtása.
    */
@@ -264,7 +260,7 @@ export class GameEngine {
           this.log("A nextCondition false, de nincs visszalépési állapot beállítva, így maradunk az aktuális állapotban: " + this.currentState);
         }
       }
-      
+
       if (this.socket) {
         this.socket.emit("stepCompleted", { currentState: this.currentState });
       }
@@ -287,7 +283,7 @@ export class GameEngine {
       this.log("Visszaléptem az előző állapotra: " + this.currentState);
       if (this.socket) {
         this.socket.emit("stateChanged", { state: this.currentState });
-        this.emit("stateChanged", { state:this.currentState});
+        this.emit("stateChanged", { state: this.currentState });
       }
     } else {
       this.log("Nincs korábbi állapot, nem tudok visszalépni.");
@@ -296,7 +292,7 @@ export class GameEngine {
   public isGameStarted(): boolean {
     return this.stateHistory.length > 1;
   }
-  
+
   public performAction(actionName: string): void {
     if (!this.currentState) {
       this.log("A játék véget ért, nem futtatunk több akciót.");
@@ -337,34 +333,34 @@ export class GameEngine {
   private waitForUserSelection(timeoutMs: number): Promise<string | null> {
     const availableActions = this.getAvailableActions();
     const data = { player: this.getCurrentPlayer(), availableActions };
-  
+
     this.socket?.emit("awaitSelection", data);
     if (this.selectionPromise) return this.selectionPromise;
-  
+
     this.selectionPromise = new Promise<string | null>((resolve) => {
       const timer = setTimeout(() => {
         this.log("A választási idő lejárt, automatikusan továbblépünk.");
         cleanup();
         resolve(null);
       }, timeoutMs);
-  
+
       this.selectionResolver = (action: string | null) => {
         clearTimeout(timer);          // <‑‑ itt töröljük a timeoutot
         cleanup();
         resolve(action);
       };
-  
+
       const cleanup = () => {
         this.selectionPromise = null;
         this.selectionResolver = null;
       };
     });
-  
+
     return this.selectionPromise;
   }
-  
-  
-  
+
+
+
 
   /**
    * Beállítja a felhasználó által választott akciót.
@@ -381,5 +377,114 @@ export class GameEngine {
   public setDeck(deck: CardData[]): void {
     this.deck = [...deck];
     this.log(`Pakli beállítva:${JSON.stringify(this.deck)}`);
+  }
+  /**
+  * A pakli megkeverése Fisher–Yates algoritmussal.
+  */
+  public shuffleDeck(): void {
+    for (let i = this.deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+    }
+    this.log(`Pakli megkeverve: ${JSON.stringify(this.deck)}`);
+  }
+  /** maximum kézméret */
+  private maxHandSize: number = Infinity;
+  /** játékosok kezének tárolása: player.id => CardData[] */
+  private hands: Record<string, CardData[]> = {};
+
+  public setPlayers(players: any[]): void {
+    this.players = players;
+    this.currentPlayerIndex = 0;
+    this.hands = {};
+    players.forEach(p => {
+      if (!p.id) throw new Error("Minden player-nek kell, hogy legyen id mezője!");
+      this.hands[p.id] = [];
+    });
+  }
+
+  /**
+   * Beállítja, hogy egy játékosnál maximum hány lap lehet kézben.
+   */
+  public setMaxHandSize(size: number): void {
+    this.maxHandSize = size;
+    this.log(`Max kézméret beállítva: ${size}`);
+  }
+
+  /**
+   * Kioszt count lapot a megadott player-nek (legfeljebb a maxHandSize erejéig).
+   */
+  public dealCards(playerId: string, count: number): void {
+    const hand = this.hands[playerId];
+    if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
+    for (let i = 0; i < count; i++) {
+      if (hand.length >= this.maxHandSize) {
+        this.log(`Nem osztható több lap ${playerId}-nek, elérte a max kézméretet.`);
+        break;
+      }
+      const card = this.deck.shift();
+      if (!card) {
+        this.log("Nincs több lap a pakliban.");
+        break;
+      }
+      hand.push(card);
+    }
+    this.log(`Kiosztva ${hand.length} lap ${playerId}-nek: ${JSON.stringify(hand)}`);
+  }
+  /**
+   * Kioszt count lapot az aktuális játékosnak (legfeljebb a maxHandSize erejéig).
+   */
+  public dealToCurrent(count: number): void {
+    const current = this.getCurrentPlayer();
+    if (!current?.id) throw new Error("Nincs érvényes current player!");
+    this.dealCards(current.id, count);
+  }
+
+  /**
+ * Kioszt count lapot minden regisztrált játékosnak
+ * (legfeljebb a beállított max kézméretig).
+ * @param count A kiosztandó kártyák száma.
+ */
+  public dealToAll(count: number): void {
+    this.players.forEach(player => {
+      if (!player.id) {
+        this.log("dealToAll: egy player-nek nincs id mezője, kihagyva.");
+        return;
+      }
+      this.dealCards(player.id, count);
+    });
+    this.log(`dealToAll: minden játékosnak kiosztva ${count} lap.`);
+  }
+
+  /**
+   * A kézben lévő lapokból letesz egyet a megadott pozícióból.
+   * Visszaadja a letett kártyát, vagy null-t, ha nem sikerült.
+   */
+  private playCard(playerId: string, index: number): CardData | null {
+    const hand = this.hands[playerId];
+    if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
+    if (index < 0 || index >= hand.length) {
+      this.log(`playCard: érvénytelen index ${index} ${playerId} kezében.`);
+      return null;
+    }
+    const [card] = hand.splice(index, 1);
+    this.log(`Player ${playerId} letette: ${JSON.stringify(card)}`);
+    return card;
+  }
+
+  /**
+   * Átrendezi a player kezében a lapokat:
+   * - fromIndex-ről eltávolítja a kártyát és beilleszti toIndex pozícióba.
+   */
+  public reorderHand(playerId: string, fromIndex: number, toIndex: number): void {
+    const hand = this.hands[playerId];
+    if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
+    if (fromIndex < 0 || fromIndex >= hand.length || toIndex < 0 || toIndex > hand.length) {
+      this.log(`reorderHand: érvénytelen fromIndex/toIndex: ${fromIndex}, ${toIndex}`);
+      return;
+    }
+    const [card] = hand.splice(fromIndex, 1);
+    hand.splice(toIndex, 0, card);
+    this.log(`Player ${playerId} keze új sorrend: ${JSON.stringify(hand)}`);
   }
 }

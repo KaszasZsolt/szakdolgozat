@@ -2,39 +2,9 @@ import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { generateGameClassFromConfig } from "../../utils/generateGameClass";
 import { GameConfig } from "../../utils/GameEngine";
+import generatedGameBaseDts from '@/utils/GeneratedGameBase.d.ts?raw';
 
-const generatedGameBaseDts = `
-/**
- * A GeneratedGameBase osztály, amely az általános funkciókat tartalmazza.
- */
-declare class GeneratedGameBase {
-  /**
-   * A játékot a következő játékosra lépteti a megadott irányban.
-   * @param direction Az irány, amelyben a következő játékosra lépünk. Alapértelmezett: 'forward'.
-   */
-  nextPlayer(direction?: 'forward' | 'backward'): void;
 
-  /**
-   * Beállítja a használandó kártyapaklit.
-   * Lehet előre definiált típus ('magyarkártya', 'pókerkártya') vagy egyéni kártyaobjektum tömb.
-   * 
-   * @param deck A választott pakli típusa vagy egyéni kártyák tömbje.
-   * @example
-   * // Előre definiált pakli: magyar kártya
-   * game.setDeckType('magyarkártya');
-   * 
-   * // Előre definiált pakli: pókerkártya
-   * game.setDeckType('pókerkártya');
-   * 
-   * // Egyéni pakli
-   * game.setDeckType([
-   *   { suit: 'fancy', rank: 'dragon' },
-   *   { suit: 'fancy', rank: 'phoenix' }
-   * ]);
-   */
-  setDeckType(deck: 'magyarkártya' | 'pókerkártya' | { suit: string; rank: string }[]): void;
-}
-`;
 
 
 interface GeneratedGameClassSectionProps {

@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"), // Biztosítsd, hogy "src"-ra mutat
+      "@": path.resolve(__dirname, "src"),
     },
   },
+  assetsInclude: ['**/*.d.ts'],
 });
