@@ -110,20 +110,84 @@ export const Deck: React.FC<{
   </div>
 );
 
-/**
- * Középső asztal, ide kerülnek a lejátszott lapok.
- */
-export const TableArea: React.FC<{
-  cards: CardData[]; // a legfelső lesz utoljára kirakva
+export type TableMode = "stack" | "spread" | "hidden";
+
+export interface TableAreaProps {
+  cards: CardData[];
+  mode?: TableMode;
+  overlapOffset?: number;
+  visibleCount?: number;          // ha megadod, mindig az utolsó N lap jelenik meg
+  width?: string;              // pl. "400px" vagy "100%"
+  height?: string;             // pl. "200px"
+  onCardClick?: (card: CardData, index: number) => void;
   className?: string;
-}> = ({ cards, className = "" }) => (
-  <div
-    className={`min-h-[28vh] w-full md:w-1/2 lg:w-1/3 border-2 border-dashed border-gray-500 rounded-lg flex flex-wrap content-center justify-center gap-2 p-4 ${className}`}
-  >
-    {cards.length === 0 ? (
-      <span className="text-gray-400 text-sm">Nincs kártya az asztalon</span>
-    ) : (
-      cards.map((c, i) => <Card key={i} card={c} />)
-    )}
-  </div>
-);
+}
+
+/**
+ * Középső asztal.
+ */
+export const TableArea: React.FC<TableAreaProps> = ({
+  cards,
+  mode = "spread",
+  overlapOffset = -0.2,
+  visibleCount,
+  width = "100%",
+  height = "100%",
+  onCardClick,
+  className = "",
+}) => {
+  // ha hidden, csak egy facedown pakli
+  if (mode === "hidden") {
+    return (
+      <div className={`${className}`}  style={{ width, height }}>
+        <Card hidden onClick={() => onCardClick?.(cards[0], 0)} />
+      </div>
+    );
+  }
+
+  // ha stack: egymás tetején tolva
+  if (mode === "stack") {
+    return (
+      <div className={`${className}`} >
+        {cards.map((c, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: `${i * overlapOffset}px`,
+              top: `${i * overlapOffset}px`,
+            }}
+          >
+            <Card card={c} onClick={() => onCardClick?.(c, i)} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // spread mód: sorban; lehet limitálni visibleCount-tel
+  const toShow = typeof visibleCount === "number"? cards.slice(-visibleCount): cards;
+
+  return (
+    <div
+      className={`flex flex-wrap justify-center items-center gap-2 overflow-auto p-2 ${className}`}
+      style={{
+        width,
+        height,
+      }}
+    >
+      {toShow.length === 0 ? (
+        <span className="text-gray-400 text-sm">Nincs kártya az asztalon</span>
+      ) : (
+        toShow.map((c, i) => (
+          <Card
+            key={i}
+            card={c}
+            onClick={() => onCardClick?.(c, i)}
+          />
+        ))
+      )}
+    </div>
+  );
+};
+

@@ -9,7 +9,7 @@ import { io } from "socket.io-client";
 import { SelectionPanel } from "../components/gameUi/SelectionPanelProps";
 import { GameEngineClient } from "../utils/GameEngineClient";
 import { API_BASE_URL } from "../config/config";
-import { CardData, Hand  } from "@/components/gameUi/CardUIComponents";
+import { CardData, Hand ,TableArea  } from "@/components/gameUi/CardUIComponents";
 import PlayerSeat from '@/components/gameUi/PlayerSeat'
 // Socket kapcsolat létrehozása
 const socket = io(API_BASE_URL, { withCredentials: true });
@@ -36,6 +36,7 @@ const GamePage: React.FC = () => {
   const [hands, setHands] = useState<Record<string, CardData[]>>({});
   const [showLogs, setShowLogs] = useState<boolean>(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [tableCards, setTableCards] = useState<CardData[]>([]);
 
   const loadGameFromRoom = useCallback(async (roomCode: string) => {
     try {
@@ -246,27 +247,11 @@ const GamePage: React.FC = () => {
   };
 
 
-  // Játékosok kördiagramként történő megjelenítése:
-  const getPlayerStyle = (index: number, total: number): React.CSSProperties => {
-    const angle = (2 * Math.PI * index) / total;
-    const radius = 300; // módosítható, ha szükséges
-    const x = radius * Math.cos(angle);
-    const y = radius * Math.sin(angle);
-    return {
-      position: "absolute",
-      left: `calc(50% + ${x}px)`,
-      top: `calc(50% + ${y}px)`,
-      transform: "translate(-50%, -50%)",
-      padding: "6px 12px",
-      backgroundColor: "#2d3748",
-      border: "1px solid #4a5568",
-      fontSize: "0.75rem"
-    };
-  };
-  const currentUserId = localStorage.getItem("userId") || "unknown";
-    return (
-      <div className="relative min-h-screen flex flex-col items-center justify-center text-white px-4 pt-16">
 
+  const currentUserId = localStorage.getItem("userId") || "unknown";
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center text-white px-4 pt-16">
+  
       {/* Mobilra: Logs toggle */}
       <div className="fixed top-16 right-2 z-50">
         <button
@@ -276,18 +261,16 @@ const GamePage: React.FC = () => {
           {showLogs ? "×" : "Logs"}
         </button>
       </div>
-
-      {/* Logs panel: Desktop always, mobile toggle */}
+  
+      {/* Logs panel */}
       <div
         className={`absolute top-16 left-0 m-4 w-80 bg-gray-900 p-4 rounded overflow-y-auto ${showLogs ? "block" : "hidden"}`}
         style={{ maxHeight: "200px" }}
       >
-        {/* Close gomb */}
-          <button
-            className="absolute top-2 right-2 text-white text-xl"
-            onClick={() => setShowLogs(false)}
-          >×
-          </button>
+        <button
+          className="absolute top-2 right-2 text-white text-xl"
+          onClick={() => setShowLogs(false)}
+        >×</button>
         <h3 className="text-lg font-bold mb-2">Játék logok:</h3>
         {logs.map((log, idx) => (
           <p key={idx} className="text-sm">
@@ -295,7 +278,7 @@ const GamePage: React.FC = () => {
           </p>
         ))}
       </div>
-
+  
       {loading ? (
         <p className="text-center text-lg">Betöltés...</p>
       ) : !triedRoomCode || (!engine && !clientEngine) ? (
@@ -319,53 +302,110 @@ const GamePage: React.FC = () => {
           </form>
         </div>
       ) : (
-        <div className="text-center relative">
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4">
+  
           {!gameStarted && triedRoomCode && (
-            <p className="text-gray-400 text-xl mb-4">A játék hamarosan kezdődik...</p>
+            <p className="text-gray-400 text-xl text-center mb-4">A játék hamarosan kezdődik...</p>
           )}
-          {/* Játékosok kördiagramként */}
-          <div className="hidden sm:block relative w-full h-[400px]">
-            {players.map((player, idx) => (
-              <PlayerSeat
-                key={player.id}
-                name={player.id === currentUserId ? "You" : player.email}
-                style={getPlayerStyle(idx, players.length)}
-                cards={hands[player.id] || []}
-                hideCards={player.id !== currentUserId}
-                onCardClick={(card, index) => {
-                  console.log(`Player ${player.id} clicked card #${index}:`, card);
-                }}
-              />
-            ))}
+  
+          <div className="grid grid-rows-[auto_1fr_auto] grid-cols-[auto_1fr_auto] gap-4 sm:h-[600px] h-auto">
+  
+            {/* Top row */}
+            <div className="col-span-3 flex justify-center flex-wrap gap-4">
+              {players.slice(0, 3).map((player) => (
+                <PlayerSeat
+                  key={player.id}
+                  name={player.id === currentUserId ? "You" : player.email}
+                  cards={hands[player.id] || []}
+                  hideCards={player.id !== currentUserId}
+                  onCardClick={(card, index) => {
+                    setHands(h => ({
+                      ...h,
+                      [player.id]: h[player.id].filter((_, i) => i !== index)
+                    }));
+                    setTableCards(tc => [...tc, card]);
+                  }}
+                />
+              ))}
+            </div>
+  
+            {/* Left side */}
+            <div className="row-span-1 flex flex-col justify-center gap-4 items-end">
+              {players.slice(3, 5).map((player) => (
+                <PlayerSeat
+                  key={player.id}
+                  name={player.id === currentUserId ? "You" : player.email}
+                  cards={hands[player.id] || []}
+                  hideCards={player.id !== currentUserId}
+                  onCardClick={(card, index) => {
+                    setHands(h => ({
+                      ...h,
+                      [player.id]: h[player.id].filter((_, i) => i !== index)
+                    }));
+                    setTableCards(tc => [...tc, card]);
+                  }}
+                />
+              ))}
+            </div>
+  
+            {/* Center Table */}
+            <div className="flex justify-center items-center">
+              <TableArea cards={tableCards} width="100%" height="180px" />
+            </div>
+  
+            {/* Right side */}
+            <div className="row-span-1 flex flex-col justify-center gap-4 items-start">
+              {players.slice(5, 7).map((player) => (
+                <PlayerSeat
+                  key={player.id}
+                  name={player.id === currentUserId ? "You" : player.email}
+                  cards={hands[player.id] || []}
+                  hideCards={player.id !== currentUserId}
+                  onCardClick={(card, index) => {
+                    setHands(h => ({
+                      ...h,
+                      [player.id]: h[player.id].filter((_, i) => i !== index)
+                    }));
+                    setTableCards(tc => [...tc, card]);
+                  }}
+                />
+              ))}
+            </div>
+  
+            {/* Bottom row */}
+            <div className="col-span-3 flex justify-center flex-wrap gap-4">
+              {players.slice(7).map((player) => (
+                <PlayerSeat
+                  key={player.id}
+                  name={player.id === currentUserId ? "You" : player.email}
+                  cards={hands[player.id] || []}
+                  hideCards={player.id !== currentUserId}
+                  onCardClick={(card, index) => {
+                    setHands(h => ({
+                      ...h,
+                      [player.id]: h[player.id].filter((_, i) => i !== index)
+                    }));
+                    setTableCards(tc => [...tc, card]);
+                  }}
+                />
+              ))}
+            </div>
           </div>
-          {/* Mobilon egymás alá */}
-          <div className="sm:hidden flex flex-col w-full gap-4 my-4">
-            {players.map((player) => (
-              <PlayerSeat
-                key={player.id}
-                name={player.id === currentUserId ? "You" : player.email}
-                cards={hands[player.id] || []}
-                hideCards={player.id !== currentUserId}
-                onCardClick={(card, index) => {
-                  console.log(`Player ${player.id} clicked card #${index}:`, card);
-                }}
-                style={{ position: "static" }}
-              />
-            ))}
-          </div>
-          {/* Start gomb hostnak */}
+  
           {showStartButton && (
-            <button
-              onClick={handleStartGame}
-              className="mt-4 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
-            >
-              Játék indítása
-            </button>
+            <div className="text-center mt-4">
+              <button
+                onClick={handleStartGame}
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
+              >
+                Játék indítása
+              </button>
+            </div>
           )}
         </div>
       )}
-
-      {/* Mobil kéz oldalt lent */}
+  
+      {/* Mobil nézet kéz lent */}
       <div className="sm:hidden fixed bottom-0 left-0 w-full bg-gray-900 p-2">
         <Hand
           cards={hands[currentUserId] || []}
@@ -374,7 +414,7 @@ const GamePage: React.FC = () => {
           className="overflow-x-auto"
         />
       </div>
-
+  
       {awaitingPlayer && awaitingPlayer.id === currentUserId && (
         <SelectionPanel
           availableActions={availableActions}
@@ -392,7 +432,7 @@ const GamePage: React.FC = () => {
           }}
         />
       )}
-
+  
       {isHost && engine?.isGameFinished() && (
         <button
           onClick={handleRestart}
@@ -403,6 +443,8 @@ const GamePage: React.FC = () => {
       )}
     </div>
   );
+  
+  
 };
 
 export default GamePage;
