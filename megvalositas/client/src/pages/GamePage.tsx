@@ -9,7 +9,8 @@ import { io } from "socket.io-client";
 import { SelectionPanel } from "../components/gameUi/SelectionPanelProps";
 import { GameEngineClient } from "../utils/GameEngineClient";
 import { API_BASE_URL } from "../config/config";
-
+import { CardData, Hand  } from "@/components/gameUi/CardUIComponents";
+import PlayerSeat from '@/components/gameUi/PlayerSeat'
 // Socket kapcsolat létrehozása
 const socket = io(API_BASE_URL, { withCredentials: true });
 
@@ -32,6 +33,9 @@ const GamePage: React.FC = () => {
   const [awaitingPlayer, setAwaitingPlayer] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [availableActions, setAvailableActions] = useState<string[]>([]);
+  const [hands, setHands] = useState<Record<string, CardData[]>>({});
+  const [showLogs, setShowLogs] = useState<boolean>(false);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const loadGameFromRoom = useCallback(async (roomCode: string) => {
     try {
@@ -158,6 +162,24 @@ const GamePage: React.FC = () => {
       socket.off("updatePlayers", handleUpdatePlayers);
     };
   }, [engine, isHost]);
+
+  useEffect(() => {
+    socket.on("handsUpdate", (data: { hands: Record<string, CardData[]> }) => {
+      setHands(data.hands);
+    });
+    socket.on(
+      "handUpdate",
+      (data: { playerId: string; hand: CardData[] }) => {
+        setHands((prev) => ({ ...prev, [data.playerId]: data.hand }));
+      }
+    );
+  
+    return () => {
+      socket.off("handsUpdate");
+      socket.off("handUpdate");
+    };
+  }, []);
+
   useEffect(() => {
     if (!clientEngine) return;
 
@@ -183,6 +205,7 @@ const GamePage: React.FC = () => {
     };
 
     const handleGameStarted = (data: any) => {
+      setGameStarted(true);
       setLogs((prevLogs) => [...prevLogs, `GAME STARTED: ${JSON.stringify(data)}`]);
     };
 
@@ -226,7 +249,7 @@ const GamePage: React.FC = () => {
   // Játékosok kördiagramként történő megjelenítése:
   const getPlayerStyle = (index: number, total: number): React.CSSProperties => {
     const angle = (2 * Math.PI * index) / total;
-    const radius = 120; // módosítható, ha szükséges
+    const radius = 300; // módosítható, ha szükséges
     const x = radius * Math.cos(angle);
     const y = radius * Math.sin(angle);
     return {
@@ -236,14 +259,43 @@ const GamePage: React.FC = () => {
       transform: "translate(-50%, -50%)",
       padding: "6px 12px",
       backgroundColor: "#2d3748",
-      borderRadius: "9999px",
       border: "1px solid #4a5568",
       fontSize: "0.75rem"
     };
   };
   const currentUserId = localStorage.getItem("userId") || "unknown";
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-white px-4">
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center text-white px-4 pt-16">
+
+      {/* Mobilra: Logs toggle */}
+      <div className="fixed top-16 right-2 z-50">
+        <button
+          className="bg-gray-700 text-white px-3 py-1 rounded"
+          onClick={() => setShowLogs((v) => !v)}
+        >
+          {showLogs ? "×" : "Logs"}
+        </button>
+      </div>
+
+      {/* Logs panel: Desktop always, mobile toggle */}
+      <div
+        className={`absolute top-16 left-0 m-4 w-80 bg-gray-900 p-4 rounded overflow-y-auto ${showLogs ? "block" : "hidden"}`}
+        style={{ maxHeight: "200px" }}
+      >
+        {/* Close gomb */}
+          <button
+            className="absolute top-2 right-2 text-white text-xl"
+            onClick={() => setShowLogs(false)}
+          >×
+          </button>
+        <h3 className="text-lg font-bold mb-2">Játék logok:</h3>
+        {logs.map((log, idx) => (
+          <p key={idx} className="text-sm">
+            {log}
+          </p>
+        ))}
+      </div>
+
       {loading ? (
         <p className="text-center text-lg">Betöltés...</p>
       ) : !triedRoomCode || (!engine && !clientEngine) ? (
@@ -268,16 +320,40 @@ const GamePage: React.FC = () => {
         </div>
       ) : (
         <div className="text-center relative">
-          <p className="text-gray-400 text-xl">A játék hamarosan kezdődik...</p>
-          {/* Játékosok megjelenítése kördiagramként */}
-          <div className="relative mt-6 w-80 h-80 mx-auto">
-            {players.map((player, index) => (
-              <div key={index} style={getPlayerStyle(index, players.length)}>
-                {player.email}
-              </div>
+          {!gameStarted && triedRoomCode && (
+            <p className="text-gray-400 text-xl mb-4">A játék hamarosan kezdődik...</p>
+          )}
+          {/* Játékosok kördiagramként */}
+          <div className="hidden sm:block relative w-full h-[400px]">
+            {players.map((player, idx) => (
+              <PlayerSeat
+                key={player.id}
+                name={player.id === currentUserId ? "You" : player.email}
+                style={getPlayerStyle(idx, players.length)}
+                cards={hands[player.id] || []}
+                hideCards={player.id !== currentUserId}
+                onCardClick={(card, index) => {
+                  console.log(`Player ${player.id} clicked card #${index}:`, card);
+                }}
+              />
             ))}
           </div>
-          {/* Csak hostnál jelenik meg a start gomb, ha a játék még Setup állapotban van */}
+          {/* Mobilon egymás alá */}
+          <div className="sm:hidden flex flex-col w-full gap-4 my-4">
+            {players.map((player) => (
+              <PlayerSeat
+                key={player.id}
+                name={player.id === currentUserId ? "You" : player.email}
+                cards={hands[player.id] || []}
+                hideCards={player.id !== currentUserId}
+                onCardClick={(card, index) => {
+                  console.log(`Player ${player.id} clicked card #${index}:`, card);
+                }}
+                style={{ position: "static" }}
+              />
+            ))}
+          </div>
+          {/* Start gomb hostnak */}
           {showStartButton && (
             <button
               onClick={handleStartGame}
@@ -288,18 +364,17 @@ const GamePage: React.FC = () => {
           )}
         </div>
       )}
-      {/* Megjelenítjük a log üzeneteket */}
-      <div
-        className="mt-6 w-full max-w-lg bg-gray-900 p-4 rounded overflow-y-auto"
-        style={{ maxHeight: "200px" }}
-      >
-        <h3 className="text-lg font-bold mb-2">Játék logok:</h3>
-        {logs.map((log, idx) => (
-          <p key={idx} className="text-sm">
-            {log}
-          </p>
-        ))}
+
+      {/* Mobil kéz oldalt lent */}
+      <div className="sm:hidden fixed bottom-0 left-0 w-full bg-gray-900 p-2">
+        <Hand
+          cards={hands[currentUserId] || []}
+          hideAll={false}
+          onCardClick={(c, i) => console.log("Clicked card", c, i)}
+          className="overflow-x-auto"
+        />
       </div>
+
       {awaitingPlayer && awaitingPlayer.id === currentUserId && (
         <SelectionPanel
           availableActions={availableActions}
@@ -309,7 +384,7 @@ const GamePage: React.FC = () => {
             } else if (clientEngine) {
               const currentUser = {
                 id: localStorage.getItem("userId") || "unknown",
-                email: localStorage.getItem("email") || "unknown@example.com"
+                email: localStorage.getItem("email") || "unknown@example.com",
               };
               clientEngine.setSelectedAction(action, currentUser);
             }
@@ -317,10 +392,12 @@ const GamePage: React.FC = () => {
           }}
         />
       )}
+
       {isHost && engine?.isGameFinished() && (
         <button
           onClick={handleRestart}
-          className="mt-4 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded">
+          className="mt-4 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded"
+        >
           Új játék indítása
         </button>
       )}

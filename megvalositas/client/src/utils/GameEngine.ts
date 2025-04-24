@@ -452,6 +452,7 @@ export class GameEngine {
         return;
       }
       this.dealCards(player.id, count);
+      this.getHands()
     });
     this.log(`dealToAll: minden játékosnak kiosztva ${count} lap.`);
   }
@@ -487,4 +488,39 @@ export class GameEngine {
     hand.splice(toIndex, 0, card);
     this.log(`Player ${playerId} keze új sorrend: ${JSON.stringify(hand)}`);
   }
+
+
+  /**
+   * @returns minden játékos azonosítójához a kézben lévő kártyák listája
+   *          és broadcast-eli is ezt a "handsUpdate" csatornán
+   */
+  public getHands(): Record<string, CardData[]> {
+    const handsCopy = Object.fromEntries(
+      Object.entries(this.hands).map(([pid, cards]) => [pid, [...cards]])
+    );
+
+    if (this.socket) {
+      // broadcast minden kliensnek az aktuális kézállást
+      this.socket.emit("handsUpdate", { hands: handsCopy });
+    }
+
+    return handsCopy;
+  }
+
+  /**
+   * @returns egyetlen játékos aktuális kézét, és csak neki küldi el
+   */
+  public getHand(playerId: string): CardData[] {
+    const handCopy = this.hands[playerId]?.slice() || [];
+
+    if (this.socket) {
+      // ha a szerver oldalon rooms/namespace-ek vannak, 
+      // itt csak a játékos saját socket-jének küldesz,
+      // feltételezve, hogy a szerver tudja melyik sockethez tartozik ez a playerId.
+      this.socket.emit("handUpdate", { playerId, hand: handCopy });
+    }
+
+    return handCopy;
+  }
+
 }

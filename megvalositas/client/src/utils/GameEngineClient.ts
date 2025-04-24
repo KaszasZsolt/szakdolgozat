@@ -32,6 +32,12 @@ export class GameEngineClient {
     this.socket.on("resetGame", (data: any) => {
       this.emit("resetGame", data);
     })
+    // this.socket.on("handUpdate", (data: any) => {
+    //   this.emit("handUpdate", data);
+    // })
+    // this.socket.on("handsUpdate", (data: any) => {
+    //   this.emit("handsUpdate", data);
+    // })
   }
 
   // callback-ek adott eseményekre
