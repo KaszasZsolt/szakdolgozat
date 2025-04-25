@@ -3,7 +3,8 @@ export interface CardData {
   suit: string;
   rank: string;
 }
-
+type CardEffectHandler = (card: CardData, playerId: string) => void;
+type BuiltInDeck = 'magyarkártya' | 'franciakártya';
 export interface GameConfig {
   game: string;
   states: {
@@ -44,13 +45,18 @@ export class GameEngine {
   // Logok tárolása
   private logs: string[] = [];
 
+  private drawPile: CardData[] = [];
+  private startingCard: CardData | null = null;
+  private cardEffects: Map<string, CardEffectHandler> = new Map();
+
   constructor(config: GameConfig, socket?: any) {
+    console.log(config,'asdasdasd');
+    console.trace('GameEngine példányosítva');
     this.config = config;
     if (socket) {
       this.socket = socket;
       this.initializeSocketEvents();
     }
-
     const className = config.game.replace(/\s+/g, "");
     if ((window as any)[className]) {
       this.gameInstance = new (window as any)[className]();
@@ -374,10 +380,32 @@ export class GameEngine {
     }
   }
 
-  public setDeck(deck: CardData[]): void {
-    this.deck = [...deck];
-    this.log(`Pakli beállítva:${JSON.stringify(this.deck)}`);
+  public setDeck(deck: BuiltInDeck | CardData[]): void {
+    let cards: CardData[] = [];
+  
+    if (Array.isArray(deck)) {
+      cards = deck;
+    } else if (deck === 'magyarkártya') {
+      ['piros', 'zöld', 'makk', 'tök'].forEach(suit =>
+        ['VII', 'VIII', 'IX', 'X', 'alsó', 'felső', 'király', 'ász'].forEach(rank =>
+          cards.push({ suit, rank })
+        )
+      );
+    } else if (deck === 'franciakártya') {
+      ['♠', '♥', '♦', '♣'].forEach(suit =>
+        ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].forEach(rank =>
+          cards.push({ suit, rank })
+        )
+      );
+    } else {
+      throw new Error(`Ismeretlen deck típus: ${deck}`);
+    }
+  
+    this.deck = [...cards];
+    this.log(`Pakli beállítva: ${JSON.stringify(this.deck)}`);
   }
+
+  
   /**
   * A pakli megkeverése Fisher–Yates algoritmussal.
   */
@@ -414,7 +442,7 @@ export class GameEngine {
   /**
    * Kioszt count lapot a megadott player-nek (legfeljebb a maxHandSize erejéig).
    */
-  public dealCards(playerId: string, count: number): void {
+  public dealCards(count: number,playerId: string): void {
     const hand = this.hands[playerId];
     if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
     for (let i = 0; i < count; i++) {
@@ -437,7 +465,7 @@ export class GameEngine {
   public dealToCurrent(count: number): void {
     const current = this.getCurrentPlayer();
     if (!current?.id) throw new Error("Nincs érvényes current player!");
-    this.dealCards(current.id, count);
+    this.dealCards( count,current.id);
   }
 
   /**
@@ -451,7 +479,7 @@ export class GameEngine {
         this.log("dealToAll: egy player-nek nincs id mezője, kihagyva.");
         return;
       }
-      this.dealCards(player.id, count);
+      this.dealCards( count,player.id);
       this.getHands()
     });
     this.log(`dealToAll: minden játékosnak kiosztva ${count} lap.`);
@@ -461,7 +489,7 @@ export class GameEngine {
    * A kézben lévő lapokból letesz egyet a megadott pozícióból.
    * Visszaadja a letett kártyát, vagy null-t, ha nem sikerült.
    */
-  private playCard(playerId: string, index: number): CardData | null {
+  public playCard(playerId: string, index: number): CardData | null {
     const hand = this.hands[playerId];
     if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
     if (index < 0 || index >= hand.length) {
@@ -470,6 +498,18 @@ export class GameEngine {
     }
     const [card] = hand.splice(index, 1);
     this.log(`Player ${playerId} letette: ${JSON.stringify(card)}`);
+  
+    const keyFull = `${card.suit}_${card.rank}`;
+    const keyRank = card.rank;
+  
+    if (this.cardEffects.has(keyFull)) {
+      this.cardEffects.get(keyFull)!(card, playerId);
+    } else if (this.cardEffects.has(keyRank)) {
+      this.cardEffects.get(keyRank)!(card, playerId);
+    } else {
+      this.log(`Nincs hatás ehhez a laphoz: ${keyFull}`);
+    }
+  
     return card;
   }
 
@@ -506,21 +546,166 @@ export class GameEngine {
 
     return handsCopy;
   }
-
   /**
-   * @returns egyetlen játékos aktuális kézét, és csak neki küldi el
+   * @returns egyetlen játékos aktuális kézét, és csak neki küldi el.
+   * Ha nincs megadva playerId, akkor az aktuális játékos kezét adja vissza.
    */
-  public getHand(playerId: string): CardData[] {
-    const handCopy = this.hands[playerId]?.slice() || [];
+  public getHand(playerId?: string): CardData[] {
+    const id = playerId || this.getCurrentPlayer()?.id;
+    if (!id) {
+      console.warn("getHand: nincs érvényes játékos ID.");
+      return [];
+    }
+
+    const handCopy = this.hands[id]?.slice() || [];
 
     if (this.socket) {
-      // ha a szerver oldalon rooms/namespace-ek vannak, 
-      // itt csak a játékos saját socket-jének küldesz,
-      // feltételezve, hogy a szerver tudja melyik sockethez tartozik ez a playerId.
-      this.socket.emit("handUpdate", { playerId, hand: handCopy });
+      this.socket.emit("handUpdate", { playerId: id, hand: handCopy });
     }
 
     return handCopy;
+  }
+
+  public setDrawPile(cards: CardData[]): void {
+    this.drawPile = [...cards];
+    this.log(`Húzópakli az asztalra helyezve: ${JSON.stringify(this.drawPile)}`);
+    if (this.socket) {
+      this.socket.emit("drawPileSet", { pile: this.drawPile });
+    }
+  }
+  public addToDrawPile(card: CardData): void {
+    this.drawPile.push(card);
+    this.log(`Lap hozzáadva a húzópaklihoz: ${JSON.stringify(card)}`);
+    if (this.socket) {
+      this.socket.emit("drawPileUpdated", { pile: this.drawPile });
+    }
+  }
+
+  public drawFromPile(): CardData | null {
+    const card = this.drawPile.shift() || null;
+    this.log(`Húzott lap a húzópakliból: ${JSON.stringify(card)}`);
+    if (this.socket) {
+      this.socket.emit("drawPileUpdated", { pile: this.drawPile });
+    }
+    return card;
+  }
+  public getDrawPile(): CardData[] {
+    return [...this.drawPile];
+  }
+
+  public setTableCard(card?: CardData): void {
+    if (!card) {
+      const nextCard = this.deck.shift();
+      card = nextCard !== null ? nextCard : undefined;
+      if (!card) {
+        this.log("Nincs elérhető kártya a pakliban, nem lehet kezdőlapot lerakni.");
+        return;
+      }
+    }
+  
+    this.startingCard = card;
+    this.log(`Kezdőlap lerakva az asztalra: ${JSON.stringify(card)}`);
+  
+    if (this.socket) {
+      this.socket.emit("startingCardSet", { card });
+    }
+  }
+  public getTableCard(): CardData | null {
+    return this.startingCard ? { ...this.startingCard } : null;
+  }
+
+  public registerCardEffect(key: string, handler: CardEffectHandler): void {
+    this.cardEffects.set(key, handler);
+    this.log(`Kártyahatás regisztrálva: ${key}`);
+  }
+  
+  /**
+   * Egy meglévő kártyát ad hozzá egy játékos kezéhez.
+   * Ha nincs megadva playerId, akkor az aktuális játékos kapja.
+   */
+  public giveCardToPlayer(card: CardData, playerId?: string): void {
+    const id = playerId || this.getCurrentPlayer()?.id;
+    if (!id) {
+      this.log("giveCardToPlayer: nincs érvényes játékos ID.");
+      return;
+    }
+
+    const hand = this.hands[id];
+    if (!hand) {
+      this.log(`giveCardToPlayer: játékos nincs regisztrálva: ${id}`);
+      return;
+    }
+
+    hand.push(card);
+    this.log(`Player ${id} kapott egy lapot: ${JSON.stringify(card)}`);
+
+    if (this.socket) {
+      this.socket.emit("handUpdate", { playerId: id, hand: [...hand] });
+    }
+  }
+
+
+  /**
+   * Általános célú választáskérés a játékostól.
+   * Küldesz neki egy listát (pl. a kézben lévő lapokat), és megadhatsz egy függvényt, 
+   * ami a választás után lefut a választott elem alapján.
+   *
+   * @param options A választható opciók tömbje (pl. kártyák, számok, szövegek).
+   * @param onSelected Callback, ami megkapja a kiválasztott opció indexét vagy értékét.
+   * @param timeoutMs (opcionális) időkorlát ezredmásodpercben. Ha nem adsz meg semmit, nincs timeout.
+   */
+  public async waitForSelection<T>(
+    options: T[],
+    onSelected: (selected: T | null, index: number | null) => void,
+    timeoutMs?: number
+  ): Promise<void> {
+    if (!this.socket) {
+      this.log("waitForSelection: nincs socket kapcsolat.");
+      return;
+    }
+
+    const player = this.getCurrentPlayer();
+    if (!player) {
+      this.log("waitForSelection: nincs aktuális játékos.");
+      return;
+    }
+
+    this.socket.emit("awaitCustomSelection", { player, options });
+
+    return new Promise<void>((resolve) => {
+      const timer = timeoutMs
+        ? setTimeout(() => {
+            cleanup();
+            this.log("waitForSelection: időtúllépés.");
+            onSelected(null, null);
+            resolve();
+          }, timeoutMs)
+        : null;
+
+      const selectionHandler = (data: any) => {
+        if (data?.player?.id !== player.id) return; // csak az aktuális játékostól fogadunk
+        cleanup();
+        const selectedIndex = data?.index ?? null;
+        const selectedValue = selectedIndex !== null ? options[selectedIndex] : null;
+        onSelected(selectedValue, selectedIndex);
+        resolve();
+      };
+
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        this.socket.off("customSelectionMade", selectionHandler);
+      };
+
+      this.socket.on("customSelectionMade", selectionHandler);
+    });
+  }
+
+  /**
+   * Visszaadja a jelenlegi pakli (deck) tartalmát.
+   * @returns A pakli kártyáinak másolata.
+   */
+  public getDeck(): CardData[] {
+    return [...this.deck];
   }
 
 }

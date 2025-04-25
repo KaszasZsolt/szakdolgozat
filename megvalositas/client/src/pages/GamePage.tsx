@@ -419,9 +419,7 @@ const GamePage: React.FC = () => {
         <SelectionPanel
           availableActions={availableActions}
           onSelect={(action: string) => {
-            if (isHost && engine) {
-              engine.setSelectedAction(action);
-            } else if (clientEngine) {
+            if (clientEngine) {
               const currentUser = {
                 id: localStorage.getItem("userId") || "unknown",
                 email: localStorage.getItem("email") || "unknown@example.com",
