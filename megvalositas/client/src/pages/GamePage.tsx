@@ -418,18 +418,32 @@ const GamePage: React.FC = () => {
       {awaitingPlayer && awaitingPlayer.id === currentUserId && (
         <SelectionPanel
           availableActions={availableActions}
-          onSelect={(action: string) => {
-            if (clientEngine) {
-              const currentUser = {
-                id: localStorage.getItem("userId") || "unknown",
-                email: localStorage.getItem("email") || "unknown@example.com",
-              };
-              clientEngine.setSelectedAction(action, currentUser);
+          onSelect={(actionStr: string) => {
+            const currentUser = {
+              id: localStorage.getItem("userId") || "unknown",
+              email: localStorage.getItem("email") || "unknown@example.com",
+            };
+
+            let parsedValue: any = actionStr;
+            try {
+              const maybeCard = JSON.parse(actionStr);
+              if (maybeCard && typeof maybeCard === 'object' && 'suit' in maybeCard && 'rank' in maybeCard) {
+                parsedValue = maybeCard;
+              }
+            } catch (_) {
+              // sima string marad
             }
+            socket.emit("customSelectionMade", {
+              player: currentUser,
+              value: parsedValue,
+            });
+
             setAwaitingPlayer(null);
           }}
         />
       )}
+
+
   
       {isHost && engine?.isGameFinished() && (
         <button

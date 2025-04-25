@@ -205,7 +205,7 @@ export class GameEngine {
         this.log("Választásra váró állapot. Timeout: " + (stateData.choiceTime ?? 0) + " mp");
         const timeout = stateData.choiceTime ? stateData.choiceTime * 1000 : 0;
         const chosenAction = await this.waitForUserSelection(timeout);
-
+        console.log("chosenAction12312313", chosenAction);
         if (chosenAction) {
           this.log(`Felhasználó által kiválasztott akció: ${chosenAction}`);
           if (this.socket) {
@@ -335,37 +335,7 @@ export class GameEngine {
     return stateData.actions.map((a) => toValidMethodName(a.name));
   }
 
-  private waitForUserSelection(timeoutMs: number): Promise<string | null> {
-    this.playerSelectionStatus[this.getCurrentPlayer()?.id] = false;
-    const availableActions = this.getAvailableActions();
-    const data = { player: this.getCurrentPlayer(), availableActions };
 
-    this.socket?.emit("awaitSelection", data);
-    if (this.selectionPromise) return this.selectionPromise;
-
-    this.selectionPromise = new Promise<string | null>((resolve) => {
-      const timer = setTimeout(() => {
-        this.log("A választási idő lejárt, automatikusan továbblépünk.");
-        cleanup();
-        resolve(null);
-      }, timeoutMs);
-
-      this.selectionResolver = (action: string | null) => {
-        clearTimeout(timer);          // <‑‑ itt töröljük a timeoutot
-        cleanup();
-        const id = this.getCurrentPlayer()?.id;
-        if (id) this.playerSelectionStatus[id] = true;
-        resolve(action);
-      };
-
-      const cleanup = () => {
-        this.selectionPromise = null;
-        this.selectionResolver = null;
-      };
-    });
-
-    return this.selectionPromise;
-  }
 
 
 
@@ -715,7 +685,57 @@ export class GameEngine {
     }
   }
 
+  private waitForUserSelection(timeoutMs: number): Promise<string | null> {
+    this.playerSelectionStatus[this.getCurrentPlayer()?.id] = false;
+    const availableActions = this.getAvailableActions();
+    const data = { player: this.getCurrentPlayer(), availableActions };
+  
+    this.socket?.emit("awaitSelection", data);
+    if (this.selectionPromise) return this.selectionPromise;
+  
+    this.selectionPromise = new Promise<string | null>((resolve) => {
+      const timer = setTimeout(() => {
+        this.log("A választási idő lejárt, automatikusan továbblépünk.");
+        cleanup();
+        resolve(null);
+      }, timeoutMs);
 
+      const selectionHandler = (data: any) => {
+        if (data?.player?.id !== this.getCurrentPlayer()?.id) return;
+        const selectedValue = typeof data.value === 'string' ? data.value : JSON.stringify(data.value);
+        this.log("customSelectionMade fogadva: " + selectedValue);
+      
+        if (this.selectionResolver) {
+          this.selectionResolver(selectedValue);
+        } else {
+          this.log("Nem volt selectionResolver!");
+        }
+        cleanup();
+
+      };
+      
+      this.selectionResolver = (action: string | null) => {
+        clearTimeout(timer);
+        const id = this.getCurrentPlayer()?.id;
+        if (id) this.playerSelectionStatus[id] = true;
+        resolve(action);
+        cleanup();
+
+      };
+  
+      const cleanup = () => {
+        this.selectionPromise = null;
+        this.selectionResolver = null;
+        this.socket?.off("customSelectionMade", selectionHandler);
+      };
+  
+      this.socket?.on("customSelectionMade", selectionHandler);
+    });
+  
+    return this.selectionPromise;
+  }
+  
+  
   /**
    * Általános célú választáskérés a játékostól.
    * Küldesz neki egy listát (pl. a kézben lévő lapokat), és megadhatsz egy függvényt, 
@@ -741,7 +761,7 @@ export class GameEngine {
       return;
     }
 
-    this.socket.emit("awaitCustomSelection", { player, options });
+    this.socket.emit("awaitSelection", { player, options });
 
     return new Promise<void>((resolve) => {
       const timer = timeoutMs
@@ -760,7 +780,7 @@ export class GameEngine {
           const selectedIndex = selectedValue !== null
             ? options.findIndex(opt => JSON.stringify(opt) === JSON.stringify(selectedValue))
             : null;
-            
+
           onSelected(selectedValue, selectedIndex);
           resolve();
         };

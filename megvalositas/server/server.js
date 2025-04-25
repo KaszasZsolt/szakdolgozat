@@ -391,7 +391,10 @@ io.on("connection", (socket) => {
   socket.on("actionSelected", (data) => {
     io.to(socket.roomCode).emit("actionSelected", data);
   });
-
+  socket.on("customSelectionMade", (data) => {
+    io.to(socket.roomCode).emit("customSelectionMade", data);
+  });
+  
   socket.on("actionExecuted", (data) => {
     io.to(socket.roomCode).emit("actionExecuted", data);
   });
