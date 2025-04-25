@@ -129,20 +129,42 @@ export class GeneratedGameBase {
   }
 
   /**
-   * A játékos kezéből letesz egy kártyát a megadott indexről.
+   * A játékos kezéből letesz egy megadott kártyát (CardData alapján).
+   * @param playerId A játékos azonosítója.
+   * @param card A kártya, amit le akar tenni.
+   * @returns A ténylegesen letett kártya vagy `null`, ha nem volt megtalálható.
    */
-  public playCard(playerId: string, index: number): CardData | null {
+  public playCard(playerId: string, card: CardData): CardData | null {
     if (!this.engine) {
       console.warn('playCard buffered until engine is set');
       let result: CardData | null = null;
       this.pendingCalls.push(() => {
-        result = this.engine!.playCard(playerId, index);
+        result = this.engine!.playCard(playerId, card);
       });
       return result;
     }
-    return this.engine.playCard(playerId, index);
+    return this.engine.playCard(playerId, card);
   }
   
+  /**
+   * Eltávolít egy adott kártyát a megadott játékos kezéből.
+   * Az első egyező kártyát távolítja el (suit + rank alapján).
+   * 
+   * @param playerId A játékos azonosítója.
+   * @param card A kártya, amelyet el szeretnél távolítani.
+   * @returns `true`, ha sikeresen eltávolította, `false` ha nem volt ilyen kártya.
+   */
+  public removeCardFromPlayerHand(playerId: string, card: CardData): boolean {
+    const apply = () => this.engine!.removeCardFromPlayerHand(playerId, card);
+    if (!this.engine) {
+      console.warn('removeCardFromPlayerHand buffered until engine is set');
+      this.pendingCalls.push(() => apply());
+      return false;
+    } else {
+      return apply();
+    }
+  }
+
    
   /**
    * Átrendezi a játékos kezében lévő kártyák sorrendjét.
@@ -199,27 +221,62 @@ export class GeneratedGameBase {
     }
   }
   
-  public setTableCard(card?: CardData): void {
-    const apply = () => this.engine!.setTableCard(card);
+    /**
+   * Beállítja az asztalra helyezett kártyákat.
+   * @param cards A lerakandó kártyák tömbje. Ha nincs megadva, a húzópakliból húz egyet.
+   */
+  public setTableCards(cards?: CardData[]): void {
+    const apply = () => this.engine!.setTableCards(cards);
     if (!this.engine) {
-      console.warn('setTableCard buffered until engine is set');
+      console.warn('setTableCards buffered until engine is set');
       this.pendingCalls.push(apply);
     } else {
       apply();
     }
   }
-  
-  public getTableCard(): CardData | null {
-    const apply = () => this.engine!.getTableCard();
+
+  /**
+   * Hozzáad egy új lapot az asztalon lévő kártyákhoz.
+   * @param card A hozzáadandó kártya.
+   */
+  public addTableCard(card: CardData): void {
+    const apply = () => this.engine!.addTableCard(card);
     if (!this.engine) {
-      console.warn('getTableCard buffered until engine is set');
+      console.warn('addTableCard buffered until engine is set');
       this.pendingCalls.push(apply);
-      return null;
+    } else {
+      apply();
+    }
+  }
+
+  /**
+   * Visszaadja az asztalon lévő összes kártyát.
+   * @returns Az asztalon lévő kártyák tömbje.
+   */
+  public getTableCards(): CardData[] {
+    const apply = () => this.engine!.getTableCards();
+    if (!this.engine) {
+      console.warn('getTableCards buffered until engine is set');
+      this.pendingCalls.push(apply);
+      return [];
     } else {
       return apply();
     }
   }
-  
+
+  /**
+   * Törli az asztalon lévő összes kártyát.
+   */
+  public clearTableCards(): void {
+    const apply = () => this.engine!.clearTableCards();
+    if (!this.engine) {
+      console.warn('clearTableCards buffered until engine is set');
+      this.pendingCalls.push(apply);
+    } else {
+      apply();
+    }
+  }
+
   public registerCardEffect(key: string, handler: (card: CardData, playerId: string) => void): void {
     const apply = () => this.engine!.registerCardEffect(key, handler);
     if (!this.engine) {

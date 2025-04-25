@@ -46,7 +46,7 @@ export class GameEngine {
   private logs: string[] = [];
 
   private drawPile: CardData[] = [];
-  private startingCard: CardData | null = null;
+  private tableCards: CardData[] = [];
   private cardEffects: Map<string, CardEffectHandler> = new Map();
   private playerSelectionStatus: Record<string, boolean> = {};
 
@@ -487,32 +487,74 @@ export class GameEngine {
     this.log(`dealToAll: minden játékosnak kiosztva ${count} lap.`);
   }
 
-  /**
-   * A kézben lévő lapokból letesz egyet a megadott pozícióból.
-   * Visszaadja a letett kártyát, vagy null-t, ha nem sikerült.
+ 
+
+    /**
+   * A játékos kezéből letesz egy konkrét kártyát.
+   * Az első egyező kártyát távolítja el a kézből.
+   * @param playerId A játékos ID-je.
+   * @param card A letenni kívánt kártya.
+   * @returns A ténylegesen letett kártya vagy `null`, ha nem található.
    */
-  public playCard(playerId: string, index: number): CardData | null {
+  public playCard(playerId: string, card: CardData): CardData | null {
     const hand = this.hands[playerId];
     if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
-    if (index < 0 || index >= hand.length) {
-      this.log(`playCard: érvénytelen index ${index} ${playerId} kezében.`);
+
+    const index = hand.findIndex(c => c.suit === card.suit && c.rank === card.rank);
+    if (index === -1) {
+      this.log(`playCardByValue: a kártya nem található a játékos kezében: ${JSON.stringify(card)}`);
       return null;
     }
-    const [card] = hand.splice(index, 1);
-    this.log(`Player ${playerId} letette: ${JSON.stringify(card)}`);
-  
-    const keyFull = `${card.suit}_${card.rank}`;
-    const keyRank = card.rank;
-  
+
+    const [playedCard] = hand.splice(index, 1);
+    this.log(`Player ${playerId} letette: ${JSON.stringify(playedCard)}`);
+
+    const keyFull = `${playedCard.suit}_${playedCard.rank}`;
+    const keyRank = playedCard.rank;
+
     if (this.cardEffects.has(keyFull)) {
-      this.cardEffects.get(keyFull)!(card, playerId);
+      this.cardEffects.get(keyFull)!(playedCard, playerId);
     } else if (this.cardEffects.has(keyRank)) {
-      this.cardEffects.get(keyRank)!(card, playerId);
+      this.cardEffects.get(keyRank)!(playedCard, playerId);
     } else {
       this.log(`Nincs hatás ehhez a laphoz: ${keyFull}`);
     }
-  
-    return card;
+
+    if (this.socket) {
+      this.socket.emit("handUpdate", { playerId, hand: [...hand] });
+    }
+
+    return playedCard;
+  }
+
+  /**
+   * Eltávolít egy adott kártyát a megadott játékos kezéből.
+   * Az első találatot távolítja el a kézben lévő azonos kártyák közül.
+   * @param playerId A játékos azonosítója.
+   * @param card A kártya, amit el kell távolítani.
+   * @returns `true`, ha a kártyát sikerült eltávolítani, `false` ha nem volt megtalálható.
+   */
+  public removeCardFromPlayerHand(playerId: string, card: CardData): boolean {
+    const hand = this.hands[playerId];
+    if (!hand) {
+      this.log(`removeCardFromPlayerHand: játékos nincs regisztrálva: ${playerId}`);
+      return false;
+    }
+
+    const index = hand.findIndex(c => c.suit === card.suit && c.rank === card.rank);
+    if (index === -1) {
+      this.log(`removeCardFromPlayerHand: nem található a kártya: ${JSON.stringify(card)} a játékos kezében.`);
+      return false;
+    }
+
+    const [removed] = hand.splice(index, 1);
+    this.log(`Eltávolítva ${JSON.stringify(removed)} játékos (${playerId}) kezéből.`);
+
+    if (this.socket) {
+      this.socket.emit("handUpdate", { playerId, hand: [...hand] });
+    }
+
+    return true;
   }
 
   /**
@@ -595,25 +637,52 @@ export class GameEngine {
     return [...this.drawPile];
   }
 
-  public setTableCard(card?: CardData): void {
-    if (!card) {
-      const nextCard = this.deck.shift();
-      card = nextCard !== null ? nextCard : undefined;
+  /**
+ * Beállítja az asztalon lévő kártyákat.
+ * Ha nincs megadva lap, akkor a pakliból vesz egyet.
+ * Felülírja az eddigi asztalon lévő kártyákat.
+ */
+  public setTableCards(cards?: CardData[]): void {
+    if (!cards || cards.length === 0) {
+      const card = this.deck.shift();
       if (!card) {
         this.log("Nincs elérhető kártya a pakliban, nem lehet kezdőlapot lerakni.");
         return;
       }
+      this.tableCards = [card];
+    } else {
+      this.tableCards = [...cards];
     }
-  
-    this.startingCard = card;
-    this.log(`Kezdőlap lerakva az asztalra: ${JSON.stringify(card)}`);
-  
-    if (this.socket) {
-      this.socket.emit("startingCardSet", { card });
-    }
+
+    this.log(`Asztali kártyák beállítva: ${JSON.stringify(this.tableCards)}`);
+    this.socket?.emit("tableCardsSet", { cards: this.tableCards });
   }
-  public getTableCard(): CardData | null {
-    return this.startingCard ? { ...this.startingCard } : null;
+
+  /**
+   * Egy új lapot ad hozzá az asztalon lévő kártyákhoz.
+   * @param card A hozzáadandó kártya.
+   */
+  public addTableCard(card: CardData): void {
+    this.tableCards.push(card);
+    this.log(`Új lap az asztalon: ${JSON.stringify(card)}`);
+    this.socket?.emit("tableCardsSet", { cards: this.tableCards });
+  }
+
+    /**
+   * Visszaadja az asztalon lévő kártyákat.
+   * @returns Az asztalon lévő kártyák másolata.
+   */
+  public getTableCards(): CardData[] {
+    return [...this.tableCards];
+  }
+
+    /**
+   * Eltávolít minden lapot az asztalról.
+   */
+  public clearTableCards(): void {
+    this.tableCards = [];
+    this.log("Az asztalon lévő kártyák törölve.");
+    this.socket?.emit("tableCardsSet", { cards: this.tableCards });
   }
 
   public registerCardEffect(key: string, handler: CardEffectHandler): void {
@@ -684,14 +753,17 @@ export class GameEngine {
           }, timeoutMs)
         : null;
 
-      const selectionHandler = (data: any) => {
-        if (data?.player?.id !== player.id) return; // csak az aktuális játékostól fogadunk
-        cleanup();
-        const selectedIndex = data?.index ?? null;
-        const selectedValue = selectedIndex !== null ? options[selectedIndex] : null;
-        onSelected(selectedValue, selectedIndex);
-        resolve();
-      };
+        const selectionHandler = (data: any) => {
+          if (data?.player?.id !== player.id) return;
+          cleanup();
+          const selectedValue = data?.value ?? null;
+          const selectedIndex = selectedValue !== null
+            ? options.findIndex(opt => JSON.stringify(opt) === JSON.stringify(selectedValue))
+            : null;
+            
+          onSelected(selectedValue, selectedIndex);
+          resolve();
+        };
 
       const cleanup = () => {
         if (timer) clearTimeout(timer);

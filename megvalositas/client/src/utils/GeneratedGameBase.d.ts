@@ -69,14 +69,36 @@ declare interface GameEngine {
      * @param count A kiosztandó kártyák száma.
      */
     dealToAll(count: number): void;
-    /**
-     * A játékos kezéből letesz egy kártyát a megadott indexről.
-     * @param playerId A játékos azonosítója.
-     * @param index A letendő kártya indexe a kézben.
-     * @returns A letett kártya, vagy `null`, ha az index érvénytelen.
-     */
-    playCard(playerId: string, index: number): CardData | null;
+  /**
+   * A játékos kezéből letesz egy konkrét kártyát.
+   * Az első egyező kártyát távolítja el a játékos kezéből.
+   *
+   * @param playerId A játékos azonosítója, akinek a kezéből a kártyát le szeretnénk tenni.
+   * @param card A kártya, amelyet le szeretnénk tenni. A keresés a suit + rank alapján történik.
+   * @returns A ténylegesen letett kártya, ha megtalálható volt a kézben; `null`, ha nem volt ilyen kártya.
+   *
+   * @example
+   * const card = { suit: 'piros', rank: 'VII' };
+   * const result = engine.playCard('player1', card);
+   * if (result) {
+   *   console.log('Sikeresen letett kártya:', result);
+   * } else {
+   *   console.log('A kártya nem volt a játékos kezében.');
+   * }
+   */
+   playCard(playerId: string, card: CardData): CardData | null;
   
+  /**
+   * Eltávolít egy adott kártyát a megadott játékos kezéből.
+   * Az első találatot távolítja el a kézben lévő azonos kártyák közül.
+   *
+   * @param playerId A játékos azonosítója.
+   * @param card A kártya, amit el kell távolítani.
+   * @returns `true`, ha a kártyát sikerült eltávolítani, `false`, ha nem volt megtalálható.
+   */
+  removeCardFromPlayerHand(playerId: string, card: CardData): boolean;
+
+
     /**
      * Átrendezi a játékos kezében lévő kártyák sorrendjét.
      * Kivágja a `fromIndex` pozíción lévő kártyát és beilleszti `toIndex` helyére.
@@ -110,17 +132,29 @@ declare interface GameEngine {
   getDrawPile(): CardData[];
 
   /**
-   * Beállítja az asztalon lévő kezdőlapot.
-   * Ha nincs megadva, a pakli első lapját használja.
-   * @param card (opcionális) A kezdőlap.
+   * Beállítja az asztalon lévő kártyákat.
+   * Ha nincs megadva, a pakli első lapjával tölti fel.
+   * @param cards (opcionális) A beállítandó kártyák tömbje.
    */
-  setTableCard(card?: CardData): void;
+    setTableCards(cards?: CardData[]): void;
 
-  /**
-   * Lekérdezi az asztalon lévő kezdőlapot.
-   * @returns A kezdőlap vagy `null`, ha még nincs lerakva.
-   */
-  getTableCard(): CardData | null;
+    /**
+     * Hozzáad egy új kártyát az asztalon lévő lapokhoz.
+     * @param card A hozzáadandó kártya.
+     */
+    addTableCard(card: CardData): void;
+
+    /**
+     * Lekérdezi az asztalon lévő összes kártyát.
+     * @returns Az asztalon lévő kártyák tömbje.
+     */
+    getTableCards(): CardData[];
+
+    /**
+     * Törli az asztalon lévő összes kártyát.
+     */
+    clearTableCards(): void;
+
 
   /**
    * Felregisztrál egy kártya hatást a megadott kártyára.
