@@ -340,4 +340,28 @@ export class GeneratedGameBase {
     }
   
 
+    /**
+   * Megmondja, hogy az aktuális játékos (vagy megadott játékos) választott-e már ebben a körben.
+   * 
+   * @param playerId (opcionális) A játékos azonosítója. Ha nincs megadva, az aktuális játékosra néz.
+   * @returns `true`, ha már választott, `false`, ha még nem, `null`, ha nem található a játékos.
+   *
+   * @example
+   * if (game.hasPlayerChosen()) {
+   *   console.log("A játékos már választott.");
+   * } else {
+   *   console.log("Még nem választott.");
+   * }
+   */
+  public hasPlayerChosen(playerId?: string): boolean | null {
+    const apply = () => this.engine!.hasPlayerChosen(playerId);
+    if (!this.engine) {
+      console.warn('hasPlayerChosen buffered until engine is set');
+      this.pendingCalls.push(() => apply());
+      return null;
+    } else {
+      return apply();
+    }
+  }
+
 }

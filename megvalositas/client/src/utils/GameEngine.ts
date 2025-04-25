@@ -48,10 +48,9 @@ export class GameEngine {
   private drawPile: CardData[] = [];
   private startingCard: CardData | null = null;
   private cardEffects: Map<string, CardEffectHandler> = new Map();
+  private playerSelectionStatus: Record<string, boolean> = {};
 
   constructor(config: GameConfig, socket?: any) {
-    console.log(config,'asdasdasd');
-    console.trace('GameEngine példányosítva');
     this.config = config;
     if (socket) {
       this.socket = socket;
@@ -337,6 +336,7 @@ export class GameEngine {
   }
 
   private waitForUserSelection(timeoutMs: number): Promise<string | null> {
+    this.playerSelectionStatus[this.getCurrentPlayer()?.id] = false;
     const availableActions = this.getAvailableActions();
     const data = { player: this.getCurrentPlayer(), availableActions };
 
@@ -353,6 +353,8 @@ export class GameEngine {
       this.selectionResolver = (action: string | null) => {
         clearTimeout(timer);          // <‑‑ itt töröljük a timeoutot
         cleanup();
+        const id = this.getCurrentPlayer()?.id;
+        if (id) this.playerSelectionStatus[id] = true;
         resolve(action);
       };
 
@@ -707,5 +709,14 @@ export class GameEngine {
   public getDeck(): CardData[] {
     return [...this.deck];
   }
-
+  /**
+   * Lekérdezi, hogy az aktuális játékos választott-e már ebben a körben.
+   * @param playerId (opcionális) A játékos ID-je. Ha nincs megadva, az aktuális játékosra vonatkozik.
+   * @returns `true`, ha már választott; `false`, ha még nem; `null`, ha nincs ilyen játékos.
+   */
+  public hasPlayerChosen(playerId?: string): boolean | null {
+    const id = playerId || this.getCurrentPlayer()?.id;
+    if (!id) return null;
+    return this.playerSelectionStatus[id] ?? false;
+  }
 }

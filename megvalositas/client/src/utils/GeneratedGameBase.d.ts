@@ -32,13 +32,13 @@ declare interface GameEngine {
      * @param deck A választott pakli típusa vagy egyéni kártyák tömbje.
      * @example
      * // Előre definiált pakli: magyar kártya
-     * game.setDeckType('magyarkártya');
+     * super.setDeckType('magyarkártya');
      * 
      * // Előre definiált pakli: franciakártya
-     * game.setDeckType('franciakártya');
+     * super.setDeckType('franciakártya');
      * 
      * // Egyéni pakli
-     * game.setDeckType([
+     * super.setDeckType([
      *   { suit: 'fancy', rank: 'dragon' },
      *   { suit: 'fancy', rank: 'phoenix' }
      * ]);
@@ -188,14 +188,14 @@ declare interface GameEngine {
    * @param playerId (opcionális) A játékos azonosítója.
    *
    * @example
-   * const card = game.drawFromPile();
+   * const card = super.drawFromPile();
    * if (card) {
-   *   game.giveCardToPlayer(card); // Jelenlegi játékos kapja
+   *   super.giveCardToPlayer(card); // Jelenlegi játékos kapja
    * }
    *
    * @example
    * const card = { suit: '♠', rank: 'A' };
-   * game.giveCardToPlayer(card, "player1"); // Konkrét játékos kapja
+   * super.giveCardToPlayer(card, "player1"); // Konkrét játékos kapja
    */
   giveCardToPlayer(card: CardData, playerId?: string): void;
 
@@ -236,9 +236,26 @@ declare interface GameEngine {
    * @returns A pakliban lévő kártyák tömbje.
    *
    * @example
-   * const remaining = game.getDeck();
+   * const remaining = super.getDeck();
    * console.log(`Még ${remaining.length} lap van a pakliban.`);
    */
     getDeck(): CardData[];
+
+
+
+    /**
+   * Megmondja, hogy az aktuális játékos (vagy megadott játékos) választott-e már ebben a körben.
+   * 
+   * @param playerId (opcionális) A játékos azonosítója. Ha nincs megadva, az aktuális játékosra néz.
+   * @returns `true`, ha már választott, `false`, ha még nem, `null`, ha nem található a játékos.
+   *
+   * @example
+   * if (super.hasPlayerChosen()) {
+   *   console.log("A játékos már választott.");
+   * } else {
+   *   console.log("Még nem választott.");
+   * }
+   */
+  hasPlayerChosen(playerId?: string): boolean | null;
 }
   
