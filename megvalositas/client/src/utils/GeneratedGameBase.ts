@@ -1,3 +1,4 @@
+import { TableMode } from "@/components/gameUi/CardUIComponents";
 import { GameEngine, CardData } from "./GameEngine";
 
 type BuiltInDeck = 'magyarkártya' | 'franciakártya';
@@ -132,17 +133,14 @@ export class GeneratedGameBase {
    * A játékos kezéből letesz egy megadott kártyát (CardData alapján).
    * @param playerId A játékos azonosítója.
    * @param card A kártya, amit le akar tenni.
-   * @returns A ténylegesen letett kártya vagy `null`, ha nem volt megtalálható.
+   * @returns A ténylegesen letett kártya vagy `null`, ha nem volt megtalálható vagy az engine még nincs készen.
    */
-  public playCard(playerId: string, card: CardData): CardData | null {
+  public playCard(playerId: string, card: CardData): Promise<CardData | null> {
     if (!this.engine) {
-      console.warn('playCard buffered until engine is set');
-      let result: CardData | null = null;
-      this.pendingCalls.push(() => {
-        result = this.engine!.playCard(playerId, card);
-      });
-      return result;
+      console.warn('playCard called before engine was set — returning null');
+      return Promise.resolve(null);
     }
+    // Ha az engine már megvan, hívjuk meg a tényleges metódust és adjuk vissza az eredményt
     return this.engine.playCard(playerId, card);
   }
   
@@ -420,5 +418,28 @@ export class GeneratedGameBase {
       return apply();
     }
   }
+  
+  /**
+   * Visszaadja a tábla tetején (legutóbb lerakott) kártyát.
+   * Ha nincs egyetlen lap sem az asztalon, undefined‐ot ad vissza.
+   */
+  public getTableTop(): CardData | undefined {
+    const cards = this.getTableCards();
+    return cards.length > 0 ? cards[cards.length - 1] : undefined;
+  }
 
+    /**
+   * Visszaadja a tábla tetején (legutóbb lerakott) kártyát.
+   * Ha nincs egyetlen lap sem az asztalon, undefined‐ot ad vissza.
+   */
+    public setTableCardMode(tableCardMode: TableMode) {
+      const apply = () => this.engine!.setTableCardMode(tableCardMode);
+      if (!this.engine) {
+        console.warn('getDeck buffered until engine is set');
+        this.pendingCalls.push(apply);
+        return [];
+      } else {
+        return apply();
+      }
+    }
 }

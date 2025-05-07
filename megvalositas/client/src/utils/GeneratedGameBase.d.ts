@@ -6,6 +6,7 @@ declare interface CardData {
     rank: string;
   }
 
+declare type TableMode = "stack" | "spread" | "hidden";
 /**
  * A játék motor interfész.
  */
@@ -291,5 +292,22 @@ declare interface GameEngine {
    * }
    */
   hasPlayerChosen(playerId?: string): boolean | null;
+
+  /**
+   * Visszaadja a tábla tetején (legutóbb lerakott) kártyát.
+   * Ha nincs egyetlen lap sem az asztalon, undefined‐ot ad vissza.
+   */
+   getTableTop(): CardData | undefined ;
+
+
+  /**
+   * Beállítja a tábla kártyáinak megjelenítési módját.
+   * A módok: "stack" (egymásra rakva), "spread" (szétszórva), "hidden" (rejtett).
+   *
+   * @param mode A megjelenítési mód ("stack", "spread", "hidden").
+   * @example
+   * super.setTableCardMode("spread");
+   * */
+   setTableCardMode(mode: TableMode): void;
 }
   

@@ -2,8 +2,9 @@ import { toValidMethodName } from "./toValidMethorName";
 export interface CardData {
   suit: string;
   rank: string;
+
 }
-type CardEffectHandler = (card: CardData, playerId: string) => void;
+type CardEffectHandler = (card: CardData, playerId: string) => void | Promise<void>;
 type BuiltInDeck = 'magyarkártya' | 'franciakártya';
 export interface GameConfig {
   game: string;
@@ -79,6 +80,14 @@ export class GameEngine {
     console.log(message);
     if (this.socket) {
       this.socket.emit("log", message);
+    }
+  }
+
+  
+  
+  public setTableCardMode(mode: string): void {
+    if (this.socket) {
+      this.socket.emit("tableCardMode", {tableCardMode:mode});
     }
   }
 
@@ -193,7 +202,10 @@ export class GameEngine {
       this.log(`Futtatom az állapotot: ${this.currentState}`);
       const stateMethod = toValidMethodName(this.currentState);
       if (typeof this.gameInstance[stateMethod] === "function") {
-        this.gameInstance[stateMethod]();
+        const result = this.gameInstance[stateMethod]();
+        if (result instanceof Promise) {
+          await result;
+        }
       } else {
         this.log(`Az állapot metódus "${stateMethod}" nem található.`);
       }
@@ -212,7 +224,10 @@ export class GameEngine {
             this.socket.emit("actionSelected", { action: chosenAction, player: this.getCurrentPlayer() });
           }
           if (typeof this.gameInstance[chosenAction] === "function") {
-            this.gameInstance[chosenAction]();
+            const result = this.gameInstance[chosenAction]();
+            if (result instanceof Promise) {
+              await result;
+            }
           } else {
             this.log(`Az akciómetódus "${chosenAction}" nem található a gameInstance-ben.`);
           }
@@ -466,7 +481,7 @@ export class GameEngine {
    * @param card A letenni kívánt kártya.
    * @returns A ténylegesen letett kártya vagy `null`, ha nem található.
    */
-  public playCard(playerId: string, card: CardData): CardData | null {
+  public async playCard(playerId: string, card: CardData): Promise<CardData | null> {
     const hand = this.hands[playerId];
     if (!hand) throw new Error(`Player ${playerId} nincs regisztrálva!`);
 
@@ -479,15 +494,20 @@ export class GameEngine {
     const [playedCard] = hand.splice(index, 1);
     this.log(`Player ${playerId} letette: ${JSON.stringify(playedCard)}`);
 
-    const keyFull = `${playedCard.suit}_${playedCard.rank}`;
-    const keyRank = playedCard.rank;
-
-    if (this.cardEffects.has(keyFull)) {
-      this.cardEffects.get(keyFull)!(playedCard, playerId);
-    } else if (this.cardEffects.has(keyRank)) {
-      this.cardEffects.get(keyRank)!(playedCard, playerId);
+    const handlerRunner = async (handler: CardEffectHandler) => {
+      const result = handler(playedCard, playerId);
+      if (isPromise(result)) {
+        await result;
+      }
+    };
+  
+    const fullKey = `${playedCard.suit}_${playedCard.rank}`;
+    if (this.cardEffects.has(fullKey)) {
+      await handlerRunner(this.cardEffects.get(fullKey)!);
+    } else if (this.cardEffects.has(playedCard.rank)) {
+      await handlerRunner(this.cardEffects.get(playedCard.rank)!);
     } else {
-      this.log(`Nincs hatás ehhez a laphoz: ${keyFull}`);
+      this.log(`Nincs hatás ehhez a laphoz: ${fullKey}`);
     }
 
     if (this.socket) {
@@ -761,7 +781,10 @@ export class GameEngine {
       return;
     }
 
-    this.socket.emit("awaitSelection", { player, options });
+    this.socket.emit("awaitSelection", {
+      player,
+      availableActions: options
+    });
 
     return new Promise<void>((resolve) => {
       const timer = timeoutMs
@@ -811,4 +834,8 @@ export class GameEngine {
     if (!id) return null;
     return this.playerSelectionStatus[id] ?? false;
   }
+}
+
+function isPromise(x: any): x is Promise<any> {
+  return !!x && typeof x.then === 'function';
 }

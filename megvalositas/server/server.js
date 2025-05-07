@@ -433,7 +433,18 @@ io.on("connection", (socket) => {
     if (!socket.roomCode) return;
     io.to(socket.roomCode).emit("handUpdate",data);
   });
-
+  socket.on("drawPileUpdated", (data) => {
+    if (!socket.roomCode) return;
+    io.to(socket.roomCode).emit("drawPileUpdated",data);
+  });
+  socket.on("tableCardsSet", (data) => {
+    if (!socket.roomCode) return;
+    io.to(socket.roomCode).emit("tableCardsSet",data);
+  });
+  socket.on("tableCardMode", (data) => {
+    if (!socket.roomCode) return;
+    io.to(socket.roomCode).emit("tableCardMode",data);
+  });
 });
 
 

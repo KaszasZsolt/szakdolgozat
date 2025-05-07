@@ -9,7 +9,7 @@ import { io } from "socket.io-client";
 import { SelectionPanel } from "../components/gameUi/SelectionPanelProps";
 import { GameEngineClient } from "../utils/GameEngineClient";
 import { API_BASE_URL } from "../config/config";
-import { CardData, Hand ,TableArea  } from "@/components/gameUi/CardUIComponents";
+import { CardData, Hand ,TableArea, TableMode  } from "@/components/gameUi/CardUIComponents";
 import PlayerSeat from '@/components/gameUi/PlayerSeat'
 // Socket kapcsolat létrehozása
 const socket = io(API_BASE_URL, { withCredentials: true });
@@ -37,7 +37,7 @@ const GamePage: React.FC = () => {
   const [showLogs, setShowLogs] = useState<boolean>(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [tableCards, setTableCards] = useState<CardData[]>([]);
-
+  const [tableCardMode, setTableCardMode] = useState<TableMode>("stack");
   const loadGameFromRoom = useCallback(async (roomCode: string) => {
     try {
       const roomData: { gameConfig: string; host: string; players: any[] } = await joinGameRoom(roomCode);
@@ -180,6 +180,30 @@ const GamePage: React.FC = () => {
       socket.off("handUpdate");
     };
   }, []);
+
+
+  useEffect(() => {
+    // Asztali kártyák frissítése
+    socket.on("tableCardsSet", (data: { cards: CardData[] }) => {
+      setTableCards(data.cards);
+    });
+  
+    return () => {
+      socket.off("tableCardsSet");
+    };
+  }, []);
+
+  useEffect(() => {
+    // Asztali kártyák frissítése
+    socket.on("tableCardMode", (data: { tableCardMode: TableMode }) => {
+      setTableCardMode(data.tableCardMode);
+    });
+  
+    return () => {
+      socket.off("tableCardMode");
+    };
+  }, []);
+
 
   useEffect(() => {
     if (!clientEngine) return;
@@ -350,7 +374,7 @@ const GamePage: React.FC = () => {
   
             {/* Center Table */}
             <div className="flex justify-center items-center">
-              <TableArea cards={tableCards} width="100%" height="180px" />
+              <TableArea mode={tableCardMode} cards={tableCards} width="100%" height="180px" />
             </div>
   
             {/* Right side */}
@@ -424,18 +448,9 @@ const GamePage: React.FC = () => {
               email: localStorage.getItem("email") || "unknown@example.com",
             };
 
-            let parsedValue: any = actionStr;
-            try {
-              const maybeCard = JSON.parse(actionStr);
-              if (maybeCard && typeof maybeCard === 'object' && 'suit' in maybeCard && 'rank' in maybeCard) {
-                parsedValue = maybeCard;
-              }
-            } catch (_) {
-              // sima string marad
-            }
             socket.emit("customSelectionMade", {
               player: currentUser,
-              value: parsedValue,
+              value: actionStr,
             });
 
             setAwaitingPlayer(null);
