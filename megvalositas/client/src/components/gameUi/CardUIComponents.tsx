@@ -148,7 +148,7 @@ export const TableArea: React.FC<TableAreaProps> = ({
   // ha stack: egymás tetején tolva
   if (mode === "stack") {
     return (
-      <div className={`${className}`} >
+      <div className={`relative ${className}`} style={{ width, height }}  >
         {cards.map((c, i) => (
           <div
             key={i}

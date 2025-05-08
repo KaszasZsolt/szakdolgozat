@@ -343,6 +343,7 @@ const GamePage: React.FC = () => {
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
+                    return;
                     setHands(h => ({
                       ...h,
                       [player.id]: h[player.id].filter((_, i) => i !== index)
@@ -362,6 +363,7 @@ const GamePage: React.FC = () => {
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
+                    return;
                     setHands(h => ({
                       ...h,
                       [player.id]: h[player.id].filter((_, i) => i !== index)
@@ -386,6 +388,7 @@ const GamePage: React.FC = () => {
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
+                    return;
                     setHands(h => ({
                       ...h,
                       [player.id]: h[player.id].filter((_, i) => i !== index)
@@ -405,6 +408,7 @@ const GamePage: React.FC = () => {
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
+                    return;
                     setHands(h => ({
                       ...h,
                       [player.id]: h[player.id].filter((_, i) => i !== index)
@@ -434,7 +438,9 @@ const GamePage: React.FC = () => {
         <Hand
           cards={hands[currentUserId] || []}
           hideAll={false}
-          onCardClick={(c, i) => console.log("Clicked card", c, i)}
+          onCardClick={(c, i) => {
+            return;
+            console.log("Clicked card", c, i)}}
           className="overflow-x-auto"
         />
       </div>
