@@ -70,6 +70,7 @@ declare interface GameEngine {
      * @param count A kiosztandó kártyák száma.
      */
     dealToAll(count: number): void;
+
   /**
    * A játékos kezéből letesz egy konkrét kártyát.
    * Az első egyező kártyát távolítja el a játékos kezéből.
@@ -87,7 +88,7 @@ declare interface GameEngine {
    *   console.log('A kártya nem volt a játékos kezében.');
    * }
    */
-   playCard(playerId: string, card: CardData): CardData | null;
+   playCard(playerId: string, card: CardData): CardData | null | Promise<CardData | null>;
   
   /**
    * Eltávolít egy adott kártyát a megadott játékos kezéből.

@@ -770,6 +770,7 @@ export class GameEngine {
     onSelected: (selected: T | null, index: number | null) => void,
     timeoutMs?: number
   ): Promise<void> {
+
     if (!this.socket) {
       this.log("waitForSelection: nincs socket kapcsolat.");
       return;
@@ -804,8 +805,10 @@ export class GameEngine {
             ? options.findIndex(opt => JSON.stringify(opt) === JSON.stringify(selectedValue))
             : null;
 
-          onSelected(selectedValue, selectedIndex);
-          resolve();
+          const maybePromise = onSelected(selectedValue, selectedIndex);
+          Promise.resolve(maybePromise).then(() => {
+            resolve();
+          });
         };
 
       const cleanup = () => {

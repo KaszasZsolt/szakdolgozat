@@ -362,7 +362,7 @@ export class GeneratedGameBase {
     onSelected: (selected: T | null, index: number | null) => void,
     timeoutMs?: number
   ): Promise<void> {
-    const apply = () => this.engine!.waitForSelection(options, onSelected, timeoutMs);
+    const apply = async () => await this.engine!.waitForSelection(options, onSelected, timeoutMs);
     if (!this.engine) {
       console.warn('waitForSelection buffered until engine is set');
       this.pendingCalls.push(() => apply());
