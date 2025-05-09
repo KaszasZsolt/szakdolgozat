@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { DndContext, rectIntersection, DragOverlay, useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -6,7 +6,7 @@ import {
   arrayMove,
   useSortable,
 } from "@dnd-kit/sortable";
-import { baseFunctions } from "../../utils/baseFunctions";
+import generatedBaseDts from '@/utils/GeneratedGameBase.d.ts?raw';
 import { CSS } from "@dnd-kit/utilities";
 import { GameConfig } from "../../utils/GameEngine";
 
@@ -224,6 +224,9 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
     const { state, index } = parseActionId(activeDragId);
     const action = config.states[state]?.actions[index];
     if (!action) return null;
+    const descKey = action.code || '';
+    const desc = descriptionMap[descKey] || 'Nincs leírás';
+    
     return (
       <div className="flex gap-1 p-1 bg-gray-600 rounded items-center">
         {!hideActionNames && (
@@ -234,15 +237,37 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
         <div className="text-xs bg-gray-700 text-white flex-1 px-1 py-1 rounded w-28">
           {action.code || ""}
         </div>
-        <span className="text-gray-300 text-xs ml-2 italic w-80 truncate">
-          {baseFunctions[
-            (action.code as keyof typeof baseFunctions)
-          ]?.description || "Nincs leírás"}
+        <span className="text-gray-300 text-xs ml-2 italic w-80 truncate" title={desc}>
+          {desc}
         </span>
       </div>
     );
   };
 
+  // regex-szel public metódusok a d.ts-ből
+  const builtinFunctions = useMemo(() => {
+    const re = /^\s+([A-Za-z0-9_]+)\s*\([^)]*\)\s*:/gm;
+    const matches = [...generatedBaseDts.matchAll(re)];
+    return matches
+      .map(m => m[1])
+      .filter(name => name !== 'constructor' && name !== 'declare' && name !== 'class');
+  }, []);
+
+const descriptionMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const reDoc = /\/\*\*([\s\S]*?)\*\/\s*([A-Za-z0-9_]+)\s*\(/gm;
+    let m;
+    while ((m = reDoc.exec(generatedBaseDts)) !== null) {
+      const rawComment = m[1];
+      const methodName = m[2];
+      const comment = rawComment
+        .split('\n')
+        .map(line => line.replace(/^\s*\*\s?/, '').trim())
+        .join(' ');
+      map[methodName] = comment;
+    }
+    return map;
+  }, []);
   return (
     <div className="bg-gray-800 rounded p-3">
       <button onClick={handleAddState} className="px-3 py-1 bg-green-600 text-white rounded mb-2 text-xs">
@@ -353,23 +378,23 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
                             className="text-xs bg-gray-700 text-white border-none flex-1 px-1 py-1 rounded w-28"
                           >
                             <option value="">Válassz egy akciót...</option>
-                            {Object.keys(baseFunctions).map((funcKey) => (
-                              <option
-                                key={funcKey}
-                                value={funcKey}
-                                onMouseEnter={() => setHoveredFunction(funcKey)} // Egérrel fölé megyünk → előnézet
-                              >
-                                {funcKey}
-                              </option>
-                            ))}
+                              {builtinFunctions.map((funcKey) => (
+                                <option
+                                  key={funcKey}
+                                  value={funcKey}
+                                  onMouseEnter={() => setHoveredFunction(funcKey)}
+                                >
+                                  {funcKey}
+                                </option>
+                              ))}
                           </select>
 
                           {/* Leírás mindig látható, ha van kiválasztott vagy előnézetben lévő elem */}
                           <span
                             className="text-gray-300 text-xs ml-2 italic w-80 truncate"
-                            title={baseFunctions[hoveredFunction as keyof typeof baseFunctions || action.code as keyof typeof baseFunctions]?.description || "Nincs leírás"}
+                            title={hoveredFunction && descriptionMap[hoveredFunction] || action.code && descriptionMap[action.code] || 'Nincs leírás'}
                           >
-                            {baseFunctions[hoveredFunction as keyof typeof baseFunctions || action.code as keyof typeof baseFunctions]?.description || "Nincs leírás"}
+                            {descriptionMap[(hoveredFunction || action.code) as string] || 'Nincs leírás'}
                           </span>
 
                           {/* Akció törlése */}

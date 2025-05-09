@@ -11,7 +11,7 @@ declare type TableMode = "stack" | "spread" | "hidden";
  * A játék motor interfész.
  */
 declare interface GameEngine {
-    // Define the properties and methods of GameEngine here
+    // GameEngine metódusok
 }
 
   /**
@@ -94,9 +94,14 @@ declare interface GameEngine {
    * Eltávolít egy adott kártyát a megadott játékos kezéből.
    * Az első találatot távolítja el a kézben lévő azonos kártyák közül.
    *
-   * @param playerId A játékos azonosítója.
+   * @param playerId A játékos azonosítója. 
    * @param card A kártya, amit el kell távolítani.
    * @returns `true`, ha a kártyát sikerült eltávolítani, `false`, ha nem volt megtalálható.
+   * @example const playerId = this.getCurrentPlayer().id;
+   * const hand = super.getHand();
+   * const card = hand[0];
+   * super.removeCardFromPlayerHand(playerId, card);
+   * 
    */
   removeCardFromPlayerHand(playerId: string, card: CardData): boolean;
 
@@ -113,6 +118,8 @@ declare interface GameEngine {
   /**
    * Beállítja a húzópaklit az asztalon.
    * @param cards A húzópakli lapjai.
+   * @example
+   * super.setDrawPile(super.getDeck())
    */
   setDrawPile(cards: CardData[]): void;
 
@@ -125,6 +132,11 @@ declare interface GameEngine {
   /**
    * Egy lapot húz a húzópakli tetejéről.
    * @returns A húzott lap, vagy `null`, ha a pakli üres.
+   * @example
+   * const card=super.drawFromPile()
+   * if (card) {
+   *  super.giveCardToPlayer(card)
+   * }
    */
   drawFromPile(): CardData | null;
 
@@ -143,6 +155,9 @@ declare interface GameEngine {
     /**
      * Hozzáad egy új kártyát az asztalon lévő lapokhoz.
      * @param card A hozzáadandó kártya.
+     * @example
+     * const card = super.drawFromPile();
+     * super.addTableCard(card);
      */
     addTableCard(card: CardData): void;
 
@@ -168,13 +183,6 @@ declare interface GameEngine {
    * 
    * Példák:
    * ```ts
-   * // Minden 2-es lapnál
-   * registerCardEffect("2", (card) => {
-   *   console.log(`Player ${playerId} 2-est dobott – következő játékos 2-t húz!`);
-   *   super.nextPlayer();
-   *   const next = super.getCurrentPlayer();
-   *   super.dealCards(2);
-   * });
    * 
    * // Minden piros színű lapnál (magyarkártya: 'piros')
    * registerCardEffect("piros", (card) => {
@@ -183,18 +191,22 @@ declare interface GameEngine {
    * });
    * 
    * // Minden ♠ ásznál
-   * registerCardEffect("♠_A", (card) => {
-   *   console.log(`Fekete ász! Színválasztás indul.`);
-   *   super.chooseColor();
+   * super.registerCardEffect('A', async () => {
+   * const suits = ['♠', '♥', '♦', '♣'];
+   * await super.waitForSelection<string>(
+   *  suits,
+   *  (selected, idx) => {
+   *    if (selected) {
+   *      // store the player’s choice
+   *      this.currentRequestedSuit = selected;
+   *    }
+   *  },
+   *  10000
+   * );
+   * console.log("választani kellene")
    * });
    * 
    * // Magyar kártya: makk alsó (specialitás)
-   * registerCardEffect("makk_alsó", (card) => {
-   *   console.log(`Makk alsó dobva – mindenki új lapot húz!`);
-   *   for (const p of super.getPlayers()) {
-   *     super.dealCards(1,p.id);
-   *   }
-   * });
    * ```
    * 
    * @param key A kártyához kapcsolódó hatás azonosítója. Például `"2"`, `"♠_A"`, `"zöld"`, `"makk_alsó"`
@@ -229,9 +241,9 @@ declare interface GameEngine {
    *   super.giveCardToPlayer(card); // Jelenlegi játékos kapja
    * }
    *
-   * @example
-   * const card = { suit: '♠', rank: 'A' };
-   * super.giveCardToPlayer(card, "player1"); // Konkrét játékos kapja
+   * const card = super.drawFromPile();
+   * super.giveCardToPlayer(card, this.getCurrentPlayer().id) // Megadott játékos kapja
+   * 
    */
   giveCardToPlayer(card: CardData, playerId?: string): void;
 
@@ -240,7 +252,7 @@ declare interface GameEngine {
    * 
    * @returns Az aktuális játékos objektuma.
    */
-  getCurrentPlayer(): any;
+  getCurrentPlayer():  { id: string;[key: string]: unknown};
 
   /**
    * Általános célú választáskérés a játékostól.
@@ -251,13 +263,44 @@ declare interface GameEngine {
    * @param onSelected Callback, ami megkapja a kiválasztott opció értékét és indexét.
    * @param timeoutMs (opcionális) időkorlát ezredmásodpercben.
    *
+   * 
    * @example
-   * const hand = super.getHand();
-   * await super.waitForSelection(hand, (selected, index) => {
-   *   if (selected && index !== null) {
-   *     super.playCard(super.getCurrentPlayer().id, index);
-   *   }
-   * });
+   *  const hand = super.getHand();
+   *  const playable = hand
+   *    .filter(c => this.isPlayable(c, super.getTableTop()!))
+   *    .map(c => JSON.stringify(c))
+   *    .concat("Húz");
+   *
+   *  await super.waitForSelection<string>(
+   *    playable,
+   *    async (sel, idx) => {
+   *      if (sel === "Húz" || !sel) {
+   *        const c = super.drawFromPile();
+   *        if (c) super.giveCardToPlayer(c, playerId);
+   *        console.log("Húzás választva");
+   *      } else {
+   *        const card = JSON.parse(sel) as CardData;
+   *        await super.playCard(playerId, card);
+   *        super.removeCardFromPlayerHand(playerId, card);
+   *        super.addTableCard(card);
+   *      }
+   *      this.advanceTurn();
+   *    },
+   *    20000
+   *  );
+   * 
+   * 
+   *  const suits = ['♠', '♥', '♦', '♣'];
+   * await super.waitForSelection<string>(
+   *   suits,
+   *  (selected, idx) => {
+   *    if (selected) {
+   *      // store the player’s choice
+   *      this.currentRequestedSuit = selected;
+   *    }
+   *  },
+   *  10000
+   * );
    */
   waitForSelection<T>(
     options: T[],

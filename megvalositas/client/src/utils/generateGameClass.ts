@@ -1,6 +1,37 @@
 import { toValidMethodName } from "./toValidMethorName";
-import { baseFunctions } from "./baseFunctions";
 import { GameConfig } from "./GameEngine";
+import generatedBaseDts from './GeneratedGameBase.d.ts?raw';
+
+
+function parseBuiltinFunctions(dts: string): string[] {
+  const re = /^\s*([A-Za-z0-9_]+)\s*\([^)]*\)\s*:/gm;
+  const names = new Set<string>();
+  let m;
+  while ((m = re.exec(dts)) !== null) {
+    const name = m[1];
+    if (name !== 'constructor' && name !== 'declare' && name !== 'class') {
+      names.add(name);
+    }
+  }
+  return Array.from(names);
+}
+
+
+function parseDescriptions(dts: string): Record<string, string> {
+  const map: Record<string, string> = {};
+  const reDoc = /\/\*\*([\s\S]*?)\*\/\s*([A-Za-z0-9_]+)\s*\(/gm;
+  let m;
+  while ((m = reDoc.exec(dts)) !== null) {
+    const rawComment = m[1];
+    const methodName = m[2];
+    const comment = rawComment
+      .split('\n')
+      .map(line => line.replace(/^\s*\*\s?/, '').trim())
+      .join(' ');
+    map[methodName] = comment;
+  }
+  return map;
+}
 
 /**
  * Ez a függvény a megadott JSON konfiguráció alapján
@@ -8,16 +39,8 @@ import { GameConfig } from "./GameEngine";
  */
 export function generateGameClassFromConfig(config: GameConfig): string {
   const className = config.game.replace(/\s+/g, "");
-
-  const usedBaseFunctions = new Set<keyof typeof baseFunctions>();
-
-  for (const stateData of Object.values(config.states)) {
-    for (const action of stateData.actions) {
-      if (action.code && action.code in baseFunctions) {
-        usedBaseFunctions.add(action.code as keyof typeof baseFunctions);
-      }
-    }
-  }
+  const builtin = parseBuiltinFunctions(generatedBaseDts);
+  const descriptions = parseDescriptions(generatedBaseDts);
 
   let code = `
 /**
@@ -29,68 +52,55 @@ class ${className} extends GeneratedGameBase {
     console.log("A(z) ${config.game} játék példánya létrejött.");
   }
 
-  //#region ALAP FUNKCIÓK
+  //#region CUSTOM STATE METHODS
 `;
 
-  usedBaseFunctions.forEach(funcName => {
+  Object.entries(config.states).forEach(([stateName, stateData]) => {
+    const stateMethod = toValidMethodName(stateName);
     code += `
   /**
-   * Alap funkció: ${funcName}
+   * State: ${stateName}
    */
-  public ${funcName} = ${baseFunctions[funcName].func.toString()};
-`;
-  });
-
-  code += `
-  //#endregion
-  //#region CUSTOM FUNKCIÓK
-`;
-
-  for (const [stateName, stateData] of Object.entries(config.states)) {
-    code += `
-  /**
-   * Állapot: ${stateName}
-   */
-  public ${toValidMethodName(stateName)}() {
+  public ${stateMethod}() {
     console.log("Belépés az állapotba: ${stateName}");
   }
 `;
 
-    for (const action of stateData.actions) {
-      const methodName = toValidMethodName(action.name);
-      const actionCall = action.code && usedBaseFunctions.has(action.code as keyof typeof baseFunctions)
-        ? `this.${action.code}();`
-        : "";
+    stateData.actions.forEach(action => {
+      const actionMethod = toValidMethodName(action.name);
+      const builtinName = action.code && builtin.includes(action.code) ? action.code : null;
+      const call = builtinName ? `    super.${builtinName}();` : '';
+      const desc = builtinName ? descriptions[builtinName] : `Nincs ilyen akció: "${action.name}"`;
 
       code += `
   /**
    * Akció: ${action.name}
+   * ${builtinName ? desc : ''}
    */
-  public ${methodName}() {
-    console.log("Fut az akció: ${toValidMethodName(action.name)}");
-    ${actionCall}
-  }
+  public ${actionMethod}() {
+    console.log("Fut az akció: ${actionMethod}");
+${call}\n  }
 `;
-    }
-  }
+    });
+  });
 
   code += `
   //#endregion
-  //#region Next state condition methods
+  //#region NEXT STATE CONDITIONS
 `;
-  // Külön region, ahol minden állapothoz generálunk egy feltétel metódust
-  for (const stateName of Object.keys(config.states)) {
+  Object.keys(config.states).forEach(stateName => {
+    const condMethod = toValidMethodName(stateName) + 'NextCondition';
     code += `
   /**
    * Feltétel a(z) "${stateName}" állapotból a következő állapotba lépéshez.
    * Itt add meg, hogy mikor térjen át a játék a következő állapotra.
    */
-  public ${toValidMethodName(stateName)}NextCondition(): boolean {
+  public ${condMethod}(): boolean {
     // TODO: Implementáld a logikát.
     return true;
   }
 `;
-  }
+  });
   code += `
   //#endregion
 }
