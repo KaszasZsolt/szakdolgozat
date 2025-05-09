@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Editor, { DiffEditor } from "@monaco-editor/react";
+import Editor, { DiffEditor, useMonaco, Monaco } from "@monaco-editor/react";
 import { generateGameClassFromConfig } from "../../utils/generateGameClass";
 import { GameConfig } from "../../utils/GameEngine";
 import generatedGameBaseDts from '@/utils/GeneratedGameBase.d.ts?raw';
@@ -17,6 +17,16 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
 }) => {
   const [generatedCode, setGeneratedCode] = useState<string>(initialCode);
   const [showDiff, setShowDiff] = useState<boolean>(false);
+  const monacoRef = React.useRef<Monaco | null>(null);
+  const monaco = useMonaco();
+  useEffect(() => {
+    if (monaco) monacoRef.current = monaco;
+  }, [monaco]);
+  useEffect(() => {
+    return () => {
+      monacoRef.current?.editor.getModels().forEach(m => m.dispose());
+    };
+  }, []);
 
   const handleGenerateClick = () => {
     if (!previewConfig) {
@@ -59,10 +69,19 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
       {showDiff ? (
         <div className="mt-4">
           <DiffEditor
+            key={`diff-${generatedCode.length}`}
             height="400px"
             language="typescript"
             original={initialCode}
             modified={generatedCode}
+            originalModelPath="inmemory://diff/original.ts"
+            modifiedModelPath="inmemory://diff/modified.ts"
+            keepCurrentOriginalModel                     
+            keepCurrentModifiedModel
+            options={{                                   
+              renderSideBySide: true,
+              minimap: { enabled: false },
+            }}
           />
           <div className="flex justify-end gap-2 mt-2">
             <button
