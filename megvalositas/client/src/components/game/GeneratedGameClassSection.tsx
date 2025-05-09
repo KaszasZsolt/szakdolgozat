@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import Editor, { DiffEditor } from "@monaco-editor/react";
 import { generateGameClassFromConfig } from "../../utils/generateGameClass";
 import { GameConfig } from "../../utils/GameEngine";
 import generatedGameBaseDts from '@/utils/GeneratedGameBase.d.ts?raw';
 
-
-
-
 interface GeneratedGameClassSectionProps {
   previewConfig: GameConfig | null;
-  onCodeChange?: (code: string) => void; // Callback, ha a szülő szeretné visszakapni a módosított kódot
+  onCodeChange?: (code: string) => void;
   initialCode?: string;
 }
 
@@ -19,9 +16,8 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
   initialCode = ""
 }) => {
   const [generatedCode, setGeneratedCode] = useState<string>(initialCode);
+  const [showDiff, setShowDiff] = useState<boolean>(false);
 
-  // Ha nincs initialCode, és a felhasználó rákattint a "Kód generálása" gombra,
-  // akkor generáljuk a kódot.
   const handleGenerateClick = () => {
     if (!previewConfig) {
       alert("Nincs betöltött konfiguráció, előbb generálj előnézetet!");
@@ -29,13 +25,14 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
     }
     const code = generateGameClassFromConfig(previewConfig);
     setGeneratedCode(code);
-    if (onCodeChange) {
-      onCodeChange(code);
-    }
+    setShowDiff(true);
   };
 
-  // Ha a szülő által megadott initialCode változik (pl. komponens mountolásakor),
-  // frissítsük a helyi állapotot.
+  const applyDiff = () => {
+    if (onCodeChange) onCodeChange(generatedCode);
+    setShowDiff(false);
+  };
+
   useEffect(() => {
     setGeneratedCode(initialCode);
   }, [initialCode]);
@@ -55,10 +52,34 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
           className="px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
           onClick={handleGenerateClick}
         >
-         Alap Kód generálása
+          Alap Kód generálása
         </button>
       </div>
-      {generatedCode ? (
+
+      {showDiff ? (
+        <div className="mt-4">
+          <DiffEditor
+            height="400px"
+            language="typescript"
+            original={initialCode}
+            modified={generatedCode}
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-500"
+              onClick={applyDiff}
+            >
+              Változások alkalmazása
+            </button>
+            <button
+              className="px-4 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
+              onClick={() => setShowDiff(false)}
+            >
+              Mégse
+            </button>
+          </div>
+        </div>
+      ) : (
         <div className="mt-4">
           <Editor
             beforeMount={handleEditorWillMount}
@@ -69,9 +90,7 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
             onChange={(value) => {
               const newCode = value || "";
               setGeneratedCode(newCode);
-              if (onCodeChange) {
-                onCodeChange(newCode);
-              }
+              if (onCodeChange) onCodeChange(newCode);
             }}
             options={{
               readOnly: false,
@@ -82,10 +101,6 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
             }}
           />
         </div>
-      ) : (
-        <p className="mt-4">
-          A generált kód itt jelenik meg, miután rákattintottál a "Kód generálása" gombra.
-        </p>
       )}
     </section>
   );
