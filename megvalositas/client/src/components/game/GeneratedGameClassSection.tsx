@@ -17,11 +17,15 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
 }) => {
   const [generatedCode, setGeneratedCode] = useState<string>(initialCode);
   const [showDiff, setShowDiff] = useState<boolean>(false);
+  const [fontSize, setFontSize] = useState<number>(14);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const monacoRef = React.useRef<Monaco | null>(null);
   const monaco = useMonaco();
+
   useEffect(() => {
     if (monaco) monacoRef.current = monaco;
   }, [monaco]);
+
   useEffect(() => {
     return () => {
       monacoRef.current?.editor.getModels().forEach(m => m.dispose());
@@ -54,10 +58,28 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
     );
   };
 
+  const enlarge = () => setFontSize(fs => Math.min(fs + 2, 32));
+  const shrink = () => setFontSize(fs => Math.max(fs - 2, 8));
+  const toggleFullscreen = () => setIsFullscreen(f => !f);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFullscreen]);
+
+  const containerClass = isFullscreen
+    ? 'fixed inset-0 bg-gray-900 z-50 flex flex-col p-4'
+    : '';
+
+  const editorHeight = isFullscreen ? '100%' : showDiff ? '400px' : '300px';
+
   return (
-    <section className="mb-8 border p-4 rounded border-gray-700">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Generált Játék Class</h2>
+    <section className={`${containerClass} mb-8 border p-4 rounded border-gray-700 bg-gray-800`}>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-2xl font-semibold text-white">Generált Játék Class</h2>
         <button
           className="px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
           onClick={handleGenerateClick}
@@ -66,61 +88,84 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
         </button>
       </div>
 
-      {showDiff ? (
-        <div className="mt-4">
+      <div className="flex justify-between items-center bg-gray-700 p-2 rounded mb-2">
+        <div className="flex gap-2">
+          <button
+            onClick={shrink}
+            className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
+          >
+            Kicsinyítés
+          </button>
+          <button
+            onClick={enlarge}
+            className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
+          >
+            Nagyítás
+          </button>
+        </div>
+        <div className="flex gap-2">
+          {showDiff && (
+            <button
+              onClick={applyDiff}
+              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500"
+            >
+              Alkalmaz
+            </button>
+          )}
+          {showDiff && (
+            <button
+              onClick={() => setShowDiff(false)}
+              className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-500"
+            >
+              Mégse
+            </button>
+          )}
+          <button
+            onClick={toggleFullscreen}
+            className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
+          >
+            {isFullscreen ? '⤫' : '⤢'}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1">
+        {showDiff ? (
           <DiffEditor
-            key={`diff-${generatedCode.length}`}
-            height="400px"
+            height={editorHeight}
             language="typescript"
             original={initialCode}
             modified={generatedCode}
             originalModelPath="inmemory://diff/original.ts"
             modifiedModelPath="inmemory://diff/modified.ts"
-            keepCurrentOriginalModel                     
-            keepCurrentModifiedModel
-            options={{                                   
+            options={{
               renderSideBySide: true,
               minimap: { enabled: false },
+              fontSize,
             }}
           />
-          <div className="flex justify-end gap-2 mt-2">
-            <button
-              className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-500"
-              onClick={applyDiff}
-            >
-              Változások alkalmazása
-            </button>
-            <button
-              className="px-4 py-1 bg-gray-600 text-white rounded hover:bg-gray-500"
-              onClick={() => setShowDiff(false)}
-            >
-              Mégse
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-4">
+        ) : (
           <Editor
             beforeMount={handleEditorWillMount}
-            height="300px"
+            height={editorHeight}
             theme="vs-dark"
             defaultLanguage="typescript"
             value={generatedCode}
-            onChange={(value) => {
-              const newCode = value || "";
+            onChange={value => {
+              const newCode = value || '';
               setGeneratedCode(newCode);
               if (onCodeChange) onCodeChange(newCode);
             }}
             options={{
               readOnly: false,
               minimap: { enabled: false },
-              wordWrap: "on",
+              wordWrap: 'on',
               tabSize: 2,
-              fontSize: 14,
+              fontSize,
             }}
           />
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 };
