@@ -91,6 +91,11 @@ const Navbar: React.FC<NavbarProps> = ({
                 {t("navbar.dashboard", "Főoldal")}
               </li>
             </Link>
+                    <Link to={currentRoutes.game}>
+              <li className="text-base text-primary font-medium cursor-pointer hover:text-gray-600">
+                {t("navbar.play_game", "Játék")}
+              </li>
+            </Link>
             <Link to={currentRoutes.gameCreation}>
               <li className="text-base text-primary font-medium cursor-pointer hover:text-gray-600">
                 {t("navbar.game_creation", "Játék készítés")}
@@ -135,6 +140,11 @@ const Navbar: React.FC<NavbarProps> = ({
               <Link to={currentRoutes.gameCreation} onClick={() => setIsOpen(false)}>
                 <li className="px-4 py-3 border-b border-gray-700 hover:bg-gray-800">
                   {t("navbar.game_creation", "Játék készítés")}
+                </li>
+              </Link>
+              <Link to={currentRoutes.game} onClick={() => setIsOpen(false)}>
+                <li className="px-4 py-3 border-b border-gray-700 hover:bg-gray-800">
+                  {t("navbar.play_game", "Játék")}
                 </li>
               </Link>
               <li
