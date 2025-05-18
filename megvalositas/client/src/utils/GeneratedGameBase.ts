@@ -442,4 +442,14 @@ export class GeneratedGameBase {
         return apply();
       }
     }
+
+  public notify(message: string, description?: string, playerId?: string): void {
+    const apply = () => this.engine!.notify(message, description, playerId);
+    if (!this.engine) {
+      console.warn('notify bufferelve, amíg az engine be nem áll');
+      this.pendingCalls.push(apply);
+    } else {
+      apply();
+    }
+  }
 }

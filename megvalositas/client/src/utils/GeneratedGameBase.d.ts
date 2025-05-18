@@ -252,7 +252,7 @@ declare interface GameEngine {
    * 
    * @returns Az aktuális játékos objektuma.
    */
-  getCurrentPlayer():  { id: string;[key: string]: unknown};
+  getCurrentPlayer():  { id: string;email: string,[key: string]: unknown};
 
   /**
    * Általános célú választáskérés a játékostól.
@@ -353,5 +353,13 @@ declare interface GameEngine {
    * super.setTableCardMode("spread");
    * */
    setTableCardMode(mode: TableMode): void;
+
+    /**
+  * Értesítés küldése.
+  * @param message    – fő szöveg
+  * @param description? – opcionális részletes leírás
+  * @param playerId?  – ha megadod, csak neki jelenik meg; különben mindenkinek
+  */
+    notify(message: string, description?: string, playerId?: string): void;
 }
   

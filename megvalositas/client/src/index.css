@@ -148,3 +148,8 @@ body {
 .colorFadeIn{
   color: var(--colorFadeIn);
 }
+
+@keyframes fadeInOut {
+  0%, 80% { opacity: 1; }
+  100%    { opacity: 0; }
+}

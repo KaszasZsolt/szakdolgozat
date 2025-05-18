@@ -119,6 +119,11 @@ export class GameEngine {
     });
   }
 
+  public notify(message: string, description?: string, playerId?: string) {
+    
+    this.socket.emit("notification", { message, description, playerId });
+  }
+
   // Eseménykezelő metódusok
   public on(event: string, handler: (...args: any[]) => void): void {
     if (!this.eventHandlers[event]) {

@@ -164,6 +164,23 @@ const GamePage: React.FC = () => {
     };
   }, [engine, isHost]);
 
+  const [notifications, setNotifications] = useState<
+    { id: string; message: string; description?: string }[]
+  >([]);
+
+  useEffect(() => {
+    if (!clientEngine) return;
+    const handler = ({ message, description,playerId }: any) => {
+      if(playerId && playerId !== localStorage.getItem("userId")) return
+      setNotifications(n => [
+        ...n,
+        { id: Date.now().toString(), message, description }
+      ]);
+    };
+    clientEngine.on("notification", handler);
+    return () => clientEngine.off("notification", handler);
+  }, [clientEngine]);
+
   useEffect(() => {
     socket.on("handsUpdate", (data: { hands: Record<string, CardData[]> }) => {
       setHands(data.hands);
@@ -339,7 +356,7 @@ const GamePage: React.FC = () => {
               {players.slice(0, 3).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "You" : player.email}
+                  name={player.id === currentUserId ? "Saját" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -359,7 +376,7 @@ const GamePage: React.FC = () => {
               {players.slice(3, 5).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "You" : player.email}
+                  name={player.id === currentUserId ? "Saját" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -384,7 +401,7 @@ const GamePage: React.FC = () => {
               {players.slice(5, 7).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "You" : player.email}
+                  name={player.id === currentUserId ? "Saját" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -404,7 +421,7 @@ const GamePage: React.FC = () => {
               {players.slice(7).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "You" : player.email}
+                  name={player.id === currentUserId ? "Saját" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -474,6 +491,31 @@ const GamePage: React.FC = () => {
           Új játék indítása
         </button>
       )}
+      <div
+        className="
+    fixed z-50 space-y-2
+    
+    /* mobilon lent középre */
+    bottom-4 left-1/2 transform -translate-x-1/2
+
+    /* asztalin: jobb oldal közép */
+    sm:bottom-auto sm:left-auto sm:right-4 sm:top-1/2 sm:transform sm:-translate-y-1/2
+  "
+      >
+        {notifications.map(n => (
+          <div
+            key={n.id}
+            className="max-w-xs p-4 bg-gray-800 bg-opacity-90 text-white rounded shadow-lg"
+            onAnimationEnd={() =>
+              setNotifications(curr => curr.filter(x => x.id !== n.id))
+            }
+            style={{ animation: "fadeInOut 5s forwards" }}
+          >
+            <strong>{n.message}</strong>
+            {n.description && <p className="mt-1 text-sm">{n.description}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   );
   

@@ -445,6 +445,10 @@ io.on("connection", (socket) => {
     if (!socket.roomCode) return;
     io.to(socket.roomCode).emit("tableCardMode",data);
   });
+  socket.on("notification", (data) => {
+    if (!socket.roomCode) return;
+    io.to(socket.roomCode).emit("notification",data);
+  });
 });
 
 
