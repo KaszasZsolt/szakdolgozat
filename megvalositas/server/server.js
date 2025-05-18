@@ -284,6 +284,34 @@ if (process.env.NODE_ENV === 'development') {
 
 //#region Játék szoba létrehozása és lekérése
 const rooms = {};
+
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function createRoom(hostId, gameId, gameConfig) {
+  let code = generateCode();
+  while (rooms[code]) {
+    code = generateCode();
+  }
+
+  rooms[code] = {
+    host: hostId,
+    gameId,
+    gameConfig,
+    players: [],
+    createdAt: new Date()
+  };
+
+  setTimeout(() => {
+    if (rooms[code] && rooms[code].players.length === 0) {
+      delete rooms[code];
+    }
+  }, 15 * 60 * 1000);
+
+  return code;
+}
+
 app.post('/rooms', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -299,10 +327,7 @@ app.post('/rooms', authenticateToken, async (req, res) => {
     
     const gameConfig = games[0].config; 
     
-    let code = Math.floor(1000 + Math.random() * 9000).toString();
-    while (rooms[code]) {
-      code = Math.floor(1000 + Math.random() * 9000).toString();
-    }
+    const code = createRoom(userId, gameId, gameConfig);
     
     rooms[code] = {
       host: userId,
@@ -411,16 +436,18 @@ io.on("connection", (socket) => {
     io.to(socket.roomCode).emit("awaitSelection", data);
   });
   
-  socket.on("disconnect", () => {
-    if (socket.roomCode && socket.user) {
-      if (rooms[socket.roomCode]) {
-        rooms[socket.roomCode].players = rooms[socket.roomCode].players.filter(
-          (u) => u.id !== socket.user.id
-        );
-        io.to(socket.roomCode).emit("updatePlayers", playersListForRoom(socket.roomCode));
-      }
+socket.on("disconnect", () => {
+  const code = socket.roomCode;
+  const userId = socket.user?.id;
+  if (code && rooms[code]) {
+    rooms[code].players = rooms[code].players.filter(u => u.id !== userId);
+    io.to(code).emit("updatePlayers", rooms[code].players);
+    if (rooms[code].players.length === 0) {
+      delete rooms[code];
+      console.log(`Szoba ${code} törölve, mert üres.`);
     }
-  });
+  }
+});
 
   socket.on("handsUpdate", (data) => {
     if (!socket.roomCode) return;
