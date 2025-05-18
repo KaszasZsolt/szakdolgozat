@@ -356,7 +356,7 @@ const GamePage: React.FC = () => {
               {players.slice(0, 3).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "Saját" : player.email}
+                  name={player.id === currentUserId ? "Én" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -376,7 +376,7 @@ const GamePage: React.FC = () => {
               {players.slice(3, 5).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "Saját" : player.email}
+                  name={player.id === currentUserId ? "Én" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -401,7 +401,7 @@ const GamePage: React.FC = () => {
               {players.slice(5, 7).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "Saját" : player.email}
+                  name={player.id === currentUserId ? "Én" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {
@@ -421,7 +421,7 @@ const GamePage: React.FC = () => {
               {players.slice(7).map((player) => (
                 <PlayerSeat
                   key={player.id}
-                  name={player.id === currentUserId ? "Saját" : player.email}
+                  name={player.id === currentUserId ? "Én" : player.email}
                   cards={hands[player.id] || []}
                   hideCards={player.id !== currentUserId}
                   onCardClick={(card, index) => {

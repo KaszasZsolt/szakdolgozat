@@ -1,7 +1,13 @@
 import { useTranslation } from "react-i18next";
-
+import { useEffect } from "react";
+import { useGameSession } from "../hooks/useGameSession";
 const Home = () => {
   const { t } = useTranslation();
+  const { resetGameSession } = useGameSession();
+
+  useEffect(() => {
+    resetGameSession();
+  }, [resetGameSession]);
 
   const milestones = [
     {
