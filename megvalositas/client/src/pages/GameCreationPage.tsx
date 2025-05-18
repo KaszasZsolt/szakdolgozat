@@ -126,6 +126,34 @@ const GameCreationPage: React.FC = () => {
         .catch((err) => {
           console.error("Konfiguráció lekérése hiba:", err);
         });
+    }else{
+      fetchGameById("47")
+        .then((game) => {
+          let newConfigString = "";
+          let newGeneratedCode = "";
+          if (game.config) {
+            try {
+              const parsed = JSON.parse(game.config);
+              if (parsed.config) {
+                newConfigString = JSON.stringify(parsed.config, null, 2);
+              } else {
+                newConfigString = game.config;
+              }
+              if (parsed.code) {
+                newGeneratedCode = parsed.code;
+              }
+            } catch (e) {
+              newConfigString = game.config;
+            }
+          } else {
+            newConfigString = JSON.stringify(defaultConfigObj, null, 2);
+          }
+          setConfig(newConfigString);
+          setGeneratedCode(newGeneratedCode);
+        })
+        .catch((err) => {
+          console.error("Konfiguráció lekérése hiba:", err);
+        });
     }
   }, [gameId, setConfig, setGeneratedCode, defaultConfigObj]);
 
