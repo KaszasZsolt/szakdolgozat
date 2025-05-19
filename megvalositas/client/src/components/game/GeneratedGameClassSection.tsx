@@ -42,10 +42,19 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
     setShowDiff(true);
   };
 
-  const applyDiff = () => {
-    if (onCodeChange) onCodeChange(generatedCode);
-    setShowDiff(false);
-  };
+const applyDiff = () => {
+  if (!monacoRef.current || !monacoRef.current.editor) return;
+  const modifiedModel = monacoRef.current.editor.getModel(
+    monacoRef.current.Uri.parse('inmemory://diff/modified.ts')
+  );
+  if (!modifiedModel) return;
+  const mergedCode = modifiedModel.getValue();
+
+  setGeneratedCode(mergedCode);
+  if (onCodeChange) onCodeChange(mergedCode);
+
+  setShowDiff(false);
+};
 
   useEffect(() => {
     setGeneratedCode(initialCode);
@@ -114,7 +123,10 @@ const GeneratedGameClassSection: React.FC<GeneratedGameClassSectionProps> = ({
           )}
           {showDiff && (
             <button
-              onClick={() => setShowDiff(false)}
+              onClick={() => {
+              setGeneratedCode(initialCode);
+              setShowDiff(false);
+            }}
               className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-500"
             >
               Mégse
