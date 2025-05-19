@@ -139,6 +139,13 @@ declare interface GameEngine {
    * }
    */
   drawFromPile(): CardData | null;
+  
+    /**
+   * A pakli megkeverése Fisher–Yates algoritmussal.
+   * A kártyák sorrendjét véletlenszerűen változtatja.
+   * @returns void
+   */
+    shuffleDeck(): void;
 
   /**
    * Visszaadja a húzópakli másolatát.

@@ -25,7 +25,7 @@ export class GeneratedGameBase {
   public nextPlayer(direction: 'forward' | 'backward' = 'forward'): void {
     const apply = () => this.engine!.nextPlayer(direction);
     if (!this.engine) {
-      console.warn('nextPlayer buffered until engine is set');
+      console.warn('nextPlayer bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -57,7 +57,7 @@ export class GeneratedGameBase {
     };
 
     if (!this.engine) {
-      console.warn('setDeckType buffered until engine is set');
+      console.warn('setDeckType bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -70,7 +70,7 @@ export class GeneratedGameBase {
   public shuffleDeck(): void {
     const apply = () => this.engine!.shuffleDeck();
     if (!this.engine) {
-      console.warn('shuffleDeck buffered until engine is set');
+      console.warn('shuffleDeck bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -83,7 +83,7 @@ export class GeneratedGameBase {
   public setMaxHandSize(size: number): void {
     const apply = () => this.engine!.setMaxHandSize(size);
     if (!this.engine) {
-      console.warn('setMaxHandSize buffered until engine is set');
+      console.warn('setMaxHandSize bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -96,7 +96,7 @@ export class GeneratedGameBase {
   public dealCards(count: number,playerId: string): void {
     const apply = () => this.engine!.dealCards( count ,playerId);
     if (!this.engine) {
-      console.warn('dealCards buffered until engine is set');
+      console.warn('dealCards bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -109,7 +109,7 @@ export class GeneratedGameBase {
   public dealToCurrent(count: number): void {
     const apply = () => this.engine!.dealToCurrent(count);
     if (!this.engine) {
-      console.warn('dealToCurrent buffered until engine is set');
+      console.warn('dealToCurrent bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -122,7 +122,7 @@ export class GeneratedGameBase {
   public dealToAll(count: number): void {
     const apply = () => this.engine!.dealToAll(count);
     if (!this.engine) {
-      console.warn('dealToAll buffered until engine is set');
+      console.warn('dealToAll bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -155,7 +155,7 @@ export class GeneratedGameBase {
   public removeCardFromPlayerHand(playerId: string, card: CardData): boolean {
     const apply = () => this.engine!.removeCardFromPlayerHand(playerId, card);
     if (!this.engine) {
-      console.warn('removeCardFromPlayerHand buffered until engine is set');
+      console.warn('removeCardFromPlayerHand bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(() => apply());
       return false;
     } else {
@@ -170,7 +170,7 @@ export class GeneratedGameBase {
   public reorderHand(playerId: string, fromIndex: number, toIndex: number): void {
     const apply = () => this.engine!.reorderHand(playerId, fromIndex, toIndex);
     if (!this.engine) {
-      console.warn('reorderHand buffered until engine is set');
+      console.warn('reorderHand bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -180,7 +180,7 @@ export class GeneratedGameBase {
   public setDrawPile(cards: CardData[]): void {
     const apply = () => this.engine!.setDrawPile(cards);
     if (!this.engine) {
-      console.warn('setDrawPile buffered until engine is set');
+      console.warn('setDrawPile bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -190,7 +190,7 @@ export class GeneratedGameBase {
   public addToDrawPile(card: CardData): void {
     const apply = () => this.engine!.addToDrawPile(card);
     if (!this.engine) {
-      console.warn('addToDrawPile buffered until engine is set');
+      console.warn('addToDrawPile bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -200,7 +200,7 @@ export class GeneratedGameBase {
   public drawFromPile(): CardData | null {
     const apply = () => this.engine!.drawFromPile();
     if (!this.engine) {
-      console.warn('drawFromPile buffered until engine is set');
+      console.warn('drawFromPile bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
       return null;
     } else {
@@ -211,7 +211,7 @@ export class GeneratedGameBase {
   public getDrawPile(): CardData[] {
     const apply = () => this.engine!.getDrawPile();
     if (!this.engine) {
-      console.warn('getDrawPile buffered until engine is set');
+      console.warn('getDrawPile bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
       return [];
     } else {
@@ -226,7 +226,7 @@ export class GeneratedGameBase {
   public setTableCards(cards?: CardData[]): void {
     const apply = () => this.engine!.setTableCards(cards);
     if (!this.engine) {
-      console.warn('setTableCards buffered until engine is set');
+      console.warn('setTableCards bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -240,7 +240,7 @@ export class GeneratedGameBase {
   public addTableCard(card: CardData): void {
     const apply = () => this.engine!.addTableCard(card);
     if (!this.engine) {
-      console.warn('addTableCard buffered until engine is set');
+      console.warn('addTableCard bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -254,7 +254,7 @@ export class GeneratedGameBase {
   public getTableCards(): CardData[] {
     const apply = () => this.engine!.getTableCards();
     if (!this.engine) {
-      console.warn('getTableCards buffered until engine is set');
+      console.warn('getTableCards bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
       return [];
     } else {
@@ -268,7 +268,7 @@ export class GeneratedGameBase {
   public clearTableCards(): void {
     const apply = () => this.engine!.clearTableCards();
     if (!this.engine) {
-      console.warn('clearTableCards buffered until engine is set');
+      console.warn('clearTableCards bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -278,7 +278,7 @@ export class GeneratedGameBase {
   public registerCardEffect(key: string, handler: (card: CardData, playerId: string) => void): void {
     const apply = () => this.engine!.registerCardEffect(key, handler);
     if (!this.engine) {
-      console.warn('registerCardEffect buffered until engine is set');
+      console.warn('registerCardEffect bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -292,7 +292,7 @@ export class GeneratedGameBase {
    public getHands(): Record<string, CardData[]> {
     const apply = () => this.engine!.getHands();
     if (!this.engine) {
-      console.warn('getHands buffered until engine is set');
+      console.warn('getHands bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
       return {}; // üres objektum, ha még nincs engine
     } else {
@@ -307,7 +307,7 @@ export class GeneratedGameBase {
   public getHand(playerId?: string): CardData[] {
     const apply = () => this.engine!.getHand(playerId);
     if (!this.engine) {
-      console.warn('getHand buffered until engine is set');
+      console.warn('getHand bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(() => apply());
       return []; // üres lista, ha még nincs engine
     } else {
@@ -325,7 +325,7 @@ export class GeneratedGameBase {
   public giveCardToPlayer(card: CardData, playerId?: string): void {
     const apply = () => this.engine!.giveCardToPlayer(card, playerId);
     if (!this.engine) {
-      console.warn('giveCardToPlayer buffered until engine is set');
+      console.warn('giveCardToPlayer bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(apply);
     } else {
       apply();
@@ -339,7 +339,7 @@ export class GeneratedGameBase {
     public getCurrentPlayer(): any {
       const apply = () => this.engine!.getCurrentPlayer();
       if (!this.engine) {
-        console.warn('getCurrentPlayer buffered until engine is set');
+        console.warn('getCurrentPlayer bufferelve, amíg az engine be nem áll');
         this.pendingCalls.push(apply);
         return null;
       } else {
@@ -364,7 +364,7 @@ export class GeneratedGameBase {
   ): Promise<void> {
     const apply = async () => await this.engine!.waitForSelection(options, onSelected, timeoutMs);
     if (!this.engine) {
-      console.warn('waitForSelection buffered until engine is set');
+      console.warn('waitForSelection bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(() => apply());
       return Promise.resolve(); // üres promise, ha még nincs engine
     } else {
@@ -386,7 +386,7 @@ export class GeneratedGameBase {
     public getDeck(): CardData[] {
       const apply = () => this.engine!.getDeck();
       if (!this.engine) {
-        console.warn('getDeck buffered until engine is set');
+        console.warn('getDeck bufferelve, amíg az engine be nem áll');
         this.pendingCalls.push(apply);
         return [];
       } else {
@@ -411,7 +411,7 @@ export class GeneratedGameBase {
   public hasPlayerChosen(playerId?: string): boolean | null {
     const apply = () => this.engine!.hasPlayerChosen(playerId);
     if (!this.engine) {
-      console.warn('hasPlayerChosen buffered until engine is set');
+      console.warn('hasPlayerChosen bufferelve, amíg az engine be nem áll');
       this.pendingCalls.push(() => apply());
       return null;
     } else {
@@ -435,7 +435,7 @@ export class GeneratedGameBase {
     public setTableCardMode(tableCardMode: TableMode) {
       const apply = () => this.engine!.setTableCardMode(tableCardMode);
       if (!this.engine) {
-        console.warn('getDeck buffered until engine is set');
+        console.warn('getDeck bufferelve, amíg az engine be nem áll');
         this.pendingCalls.push(apply);
         return [];
       } else {
