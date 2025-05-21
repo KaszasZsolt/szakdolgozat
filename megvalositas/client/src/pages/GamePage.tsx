@@ -330,7 +330,7 @@ const GamePage: React.FC = () => {
               type="text"
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
-              placeholder="4 számjegyű kód"
+              placeholder="6 számjegyű kód"
               className="border border-gray-400 rounded px-3 py-2 w-full max-w-xs bg-gray-800 text-white"
             />
             <button
