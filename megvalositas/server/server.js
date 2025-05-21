@@ -451,8 +451,6 @@ socket.on("disconnect", () => {
 
   socket.on("handsUpdate", (data) => {
     if (!socket.roomCode) return;
-    console.log(data)
-
     io.to(socket.roomCode).emit("handsUpdate", data);
   });
 
