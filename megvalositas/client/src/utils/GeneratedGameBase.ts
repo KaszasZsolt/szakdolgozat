@@ -452,4 +452,12 @@ export class GeneratedGameBase {
       apply();
     }
   }
+  
+  public getPlayers(): any[] {
+    if (!this.engine) {
+      console.warn('getPlayers hívva, de az engine még nincs inicializálva – üres listát ad vissza.');
+      return [];
+    }
+    return this.engine.getPlayers();
+  }
 }

@@ -247,10 +247,10 @@ const CustomJsonEditor: React.FC<CustomJsonEditorProps> = ({ config, onConfigCha
   // regex-szel public metódusok a d.ts-ből
   const builtinFunctions = useMemo(() => {
     const re = /^\s+([A-Za-z0-9_]+)\s*\([^)]*\)\s*:/gm;
-    const matches = [...generatedBaseDts.matchAll(re)];
-    return matches
+    const matches = [...generatedBaseDts.matchAll(re)]
       .map(m => m[1])
       .filter(name => name !== 'constructor' && name !== 'declare' && name !== 'class');
+    return matches.sort((a, b) => a.localeCompare(b));
   }, []);
 
 const descriptionMap = useMemo(() => {

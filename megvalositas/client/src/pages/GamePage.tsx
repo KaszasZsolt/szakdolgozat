@@ -172,9 +172,10 @@ const GamePage: React.FC = () => {
     if (!clientEngine) return;
     const handler = ({ message, description,playerId }: any) => {
       if(playerId && playerId !== localStorage.getItem("userId")) return
+      const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
       setNotifications(n => [
         ...n,
-        { id: Date.now().toString(), message, description }
+        { id: uniqueId, message, description }
       ]);
     };
     clientEngine.on("notification", handler);

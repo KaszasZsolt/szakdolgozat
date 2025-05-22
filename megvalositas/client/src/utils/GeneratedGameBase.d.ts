@@ -368,5 +368,13 @@ declare interface GameEngine {
   * @param playerId?  – ha megadod, csak neki jelenik meg; különben mindenkinek
   */
     notify(message: string, description?: string, playerId?: string): void;
+
+    /**
+    * A játékhoz csatlakozott játékosok listájának lekérése.
+    * @returns {any[]} – az aktuálisan csatlakozott játékosokat tartalmazó tömb. Minden elem egy
+    *                     { id: string; email: string; … } objektum. Ha az engine még nincs inicializálva,
+    *                     üres tömböt ad vissza.
+    */
+    public getPlayers(): any[];
 }
   
