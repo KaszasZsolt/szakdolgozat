@@ -348,28 +348,27 @@ export class GeneratedGameBase {
     }
 
 
-      /**
+  /**
    * Általános célú választáskérés a játékostól.
    * Küldesz neki egy listát (pl. kártyák, számok, szövegek), és megadhatsz egy függvényt,
-   * ami a választás után lefut a kiválasztott elem vagy index alapján.
-   * 
+   * ami a választás után lefut a kiválasztott elem vagy null alapján.
+   *
    * @param options A választható opciók tömbje (pl. kártyák).
    * @param onSelected Callback, amely megkapja a kiválasztott értéket vagy null-t ha timeout vagy nem választott.
    * @param timeoutMs (opcionális) időkorlát ezredmásodpercben. Ha nincs megadva, nincs timeout.
+   * @returns Promise<boolean> – true, ha választott valamit, false timeout vagy lemondás esetén
    */
   public async waitForSelection<T>(
     options: T[],
     onSelected: (selected: T | null, index: number | null) => void,
     timeoutMs?: number
-  ): Promise<void> {
-    const apply = async () => await this.engine!.waitForSelection(options, onSelected, timeoutMs);
+  ): Promise<boolean> {
     if (!this.engine) {
-      console.warn('waitForSelection bufferelve, amíg az engine be nem áll');
-      this.pendingCalls.push(() => apply());
-      return Promise.resolve(); // üres promise, ha még nincs engine
-    } else {
-      return apply();
+      console.warn('Engine még nincs kész, bufferelve waitForSelection.');
+      this.pendingCalls.push(() => this.engine!.waitForSelection(options, onSelected, timeoutMs));
+      return false;
     }
+    return this.engine.waitForSelection(options, onSelected, timeoutMs);
   }
 
 

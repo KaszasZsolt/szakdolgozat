@@ -772,47 +772,50 @@ export class GameEngine {
     options: T[],
     onSelected: (selected: T | null, index: number | null) => void,
     timeoutMs?: number
-  ): Promise<void> {
-
+  ): Promise<boolean> {
     if (!this.socket) {
       this.log("waitForSelection: nincs socket kapcsolat.");
-      return;
+      return false;
     }
 
     const player = this.getCurrentPlayer();
     if (!player) {
       this.log("waitForSelection: nincs aktuális játékos.");
-      return;
+      return false;
     }
 
+    // Itt maradjon availableActions
     this.socket.emit("awaitSelection", {
       player,
       availableActions: options
     });
 
-    return new Promise<void>((resolve) => {
+    return new Promise<boolean>((resolve) => {
       const timer = timeoutMs
         ? setTimeout(() => {
-            cleanup();
-            this.log("waitForSelection: időtúllépés.");
-            onSelected(null, null);
-            resolve();
-          }, timeoutMs)
+          cleanup();
+          this.log("waitForSelection: időtúllépés, false-szal térünk vissza.");
+          onSelected(null, null);
+          resolve(false);
+        }, timeoutMs)
         : null;
 
-        const selectionHandler = (data: any) => {
-          if (data?.player?.id !== player.id) return;
-          cleanup();
-          const selectedValue = data?.value ?? null;
-          const selectedIndex = selectedValue !== null
-            ? options.findIndex(opt => JSON.stringify(opt) === JSON.stringify(selectedValue))
-            : null;
+      const selectionHandler = (data: any) => {
+        if (data?.player?.id !== player.id) return;
+        cleanup();
 
-          const maybePromise = onSelected(selectedValue, selectedIndex);
-          Promise.resolve(maybePromise).then(() => {
-            resolve();
-          });
-        };
+        const selectedValue = data.value ?? null;
+        const selectedIndex = selectedValue !== null
+          ? options.findIndex(opt => JSON.stringify(opt) === JSON.stringify(selectedValue))
+          : null;
+
+        // először a callback
+        const r = onSelected(selectedValue, selectedIndex);
+        Promise.resolve(r).then(() => {
+          this.log("waitForSelection: választás érkezett, true-val térünk vissza.");
+          resolve(true);
+        });
+      };
 
       const cleanup = () => {
         if (timer) clearTimeout(timer);
@@ -822,6 +825,7 @@ export class GameEngine {
       this.socket.on("customSelectionMade", selectionHandler);
     });
   }
+
 
   /**
    * Visszaadja a jelenlegi pakli (deck) tartalmát.

@@ -269,7 +269,7 @@ declare interface GameEngine {
    * @param options A választható opciók tömbje (pl. kártyák, számok, szövegek).
    * @param onSelected Callback, ami megkapja a kiválasztott opció értékét és indexét.
    * @param timeoutMs (opcionális) időkorlát ezredmásodpercben.
-   *
+   * @returns Promise<boolean> – true, ha választott valamit, false timeout vagy lemondás esetén
    * 
    * @example
    *  const hand = super.getHand();
@@ -313,7 +313,7 @@ declare interface GameEngine {
     options: T[],
     onSelected: (selected: T | null, index: number | null) => void,
     timeoutMs?: number
-  ): Promise<void>;
+  ): Promise<boolean>;
 
     /**
    * Visszaadja a pakli aktuális állapotát, azaz a még kiosztható lapokat.
