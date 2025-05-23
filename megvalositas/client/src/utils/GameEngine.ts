@@ -206,6 +206,7 @@ export class GameEngine {
 
       this.log(`Futtatom az állapotot: ${this.currentState}`);
       const stateMethod = toValidMethodName(this.currentState);
+
       if (typeof this.gameInstance[stateMethod] === "function") {
         const result = this.gameInstance[stateMethod]();
         if (result instanceof Promise) {
@@ -217,21 +218,20 @@ export class GameEngine {
 
       const stateData = this.config.states[this.currentState];
 
-      // Ha dönteni kell akkor várjuk a user akcióját vagy time outot
+      // 2) Ha kell, kiválasztásra várunk...
       if (stateData.enableActionSelection) {
         this.log("Választásra váró állapot. Timeout: " + (stateData.choiceTime ?? 0) + " mp");
         const timeout = stateData.choiceTime ? stateData.choiceTime * 1000 : 0;
         const chosenAction = await this.waitForUserSelection(timeout);
-        console.log("chosenAction12312313", chosenAction);
         if (chosenAction) {
           this.log(`Felhasználó által kiválasztott akció: ${chosenAction}`);
           if (this.socket) {
             this.socket.emit("actionSelected", { action: chosenAction, player: this.getCurrentPlayer() });
           }
           if (typeof this.gameInstance[chosenAction] === "function") {
-            const result = this.gameInstance[chosenAction]();
-            if (result instanceof Promise) {
-              await result;
+            const actionResult = this.gameInstance[chosenAction]();
+            if (actionResult instanceof Promise) {
+              await actionResult;
             }
           } else {
             this.log(`Az akciómetódus "${chosenAction}" nem található a gameInstance-ben.`);
@@ -239,13 +239,16 @@ export class GameEngine {
         } else {
           this.log("Nem történt felhasználói választás, továbblépünk akció nélkül.");
         }
-      } else {
-        // Ha nem decision state, akkor lefuttatjuk az összes akciót
+      }
+      else {
         for (const action of stateData.actions) {
           const actionMethod = toValidMethodName(action.name);
           this.log(`Futtatom az akciót: ${action.name} (${actionMethod})`);
           if (typeof this.gameInstance[actionMethod] === "function") {
-            this.gameInstance[actionMethod]();
+            const actionResult = this.gameInstance[actionMethod]();
+            if (actionResult instanceof Promise) {
+              await actionResult;
+            }
             if (this.socket) {
               this.socket.emit("actionExecuted", { action: action.name, player: this.getCurrentPlayer() });
             }
@@ -254,10 +257,11 @@ export class GameEngine {
           }
         }
       }
-      const conditionMethodName = toValidMethodName(this.currentState) + "NextCondition";
+
+      const condName = toValidMethodName(this.currentState) + "NextCondition";
       let shouldTransition = true;
-      if (typeof this.gameInstance[conditionMethodName] === "function") {
-        shouldTransition = this.gameInstance[conditionMethodName]();
+      if (typeof this.gameInstance[condName] === "function") {
+        shouldTransition = this.gameInstance[condName]();
       }
 
       if (shouldTransition) {
@@ -268,22 +272,15 @@ export class GameEngine {
           this.log(`Tovább lépünk a(z) "${stateData.next}" állapotba.`);
           this.currentState = stateData.next;
           this.stateHistory.push(this.currentState);
-          setTimeout(() => {
-            this.runOneStep();
-          }, 10);
+          setTimeout(() => this.runOneStep(), 10);
         }
+      } else if (stateData.previous) {
+        this.log(`Visszalépünk a korábbi állapotra: ${stateData.previous}`);
+        this.currentState = stateData.previous;
+        this.stateHistory.push(this.currentState);
+        setTimeout(() => this.runOneStep(), 1000);
       } else {
-        // Ha a nextCondition false, ellenőrizzük, hogy van-e "previous" beállítva
-        if (stateData.previous) {
-          this.log(`Visszalépünk a korábbi állapotra: ${stateData.previous}`);
-          this.currentState = stateData.previous;
-          this.stateHistory.push(this.currentState);
-          setTimeout(() => {
-            this.runOneStep();
-          }, 1000);
-        } else {
-          this.log("A nextCondition false, de nincs visszalépési állapot beállítva, így maradunk az aktuális állapotban: " + this.currentState);
-        }
+        this.log("nextCondition false, de nincs previous beállítva, maradunk itt: " + this.currentState);
       }
 
       if (this.socket) {
@@ -293,6 +290,7 @@ export class GameEngine {
       this.isRunning = false;
     }
   }
+
   public startGame(): void {
     this.log("Játék indítása...");
     if (this.socket) {

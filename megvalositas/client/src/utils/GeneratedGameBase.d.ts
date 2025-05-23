@@ -32,13 +32,13 @@ declare interface GameEngine {
      * 
      * @param deck A választott pakli típusa vagy egyéni kártyák tömbje.
      * @example
-     * // Előre definiált pakli: magyar kártya
+     * Előre definiált pakli: magyar kártya
      * super.setDeckType('magyarkártya');
      * 
-     * // Előre definiált pakli: franciakártya
+     * Előre definiált pakli: franciakártya
      * super.setDeckType('franciakártya');
      * 
-     * // Egyéni pakli
+     * Egyéni pakli
      * super.setDeckType([
      *   { suit: 'fancy', rank: 'dragon' },
      *   { suit: 'fancy', rank: 'phoenix' }
